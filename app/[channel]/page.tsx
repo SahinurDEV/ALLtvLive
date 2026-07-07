@@ -1,35 +1,82 @@
-"use client";
+import type { Metadata } from "next";
+import { ChannelRedirect } from "./ChannelRedirect";
 
-import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useChannels } from "@/hooks/useChannels";
-import { useAppStore } from "@/lib/store";
-import { Loader2 } from "lucide-react";
+interface Props {
+  params: Promise<{ channel: string }>;
+}
 
-export default function ChannelPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { allChannels, isLoading } = useChannels();
-  const openPlayer = useAppStore((s) => s.openPlayer);
-
-  const channelId = params.channel as string;
-
-  useEffect(() => {
-    if (isLoading || allChannels.length === 0) return;
-
-    const channel = allChannels.find((ch) => ch.id === channelId);
-    if (channel) {
-      openPlayer(channel);
+async function fetchChannelMeta(id: string): Promise<{
+  name?: string;
+  logo?: string | null;
+  country?: string;
+  categories?: string[];
+} | null> {
+  try {
+    const [channelsRes, logosRes] = await Promise.all([
+      fetch("https://iptv-org.github.io/api/channels.json", {
+        next: { revalidate: 3600 },
+      }),
+      fetch("https://iptv-org.github.io/api/logos.json", {
+        next: { revalidate: 3600 },
+      }),
+    ]);
+    if (!channelsRes.ok) return null;
+    const channels: Array<{
+      id: string;
+      name: string;
+      country: string;
+      categories: string[];
+    }> = await channelsRes.json();
+    const channel = channels.find((c) => c.id === id);
+    if (!channel) return null;
+    let logo: string | null = null;
+    if (logosRes.ok) {
+      const logos: Array<{ channel: string; url: string }> = await logosRes.json();
+      logo = logos.find((l) => l.channel === id)?.url || null;
     }
-    router.replace("/");
-  }, [channelId, allChannels, isLoading, openPlayer, router]);
+    return {
+      name: channel.name,
+      logo,
+      country: channel.country,
+      categories: channel.categories,
+    };
+  } catch {
+    return null;
+  }
+}
 
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="flex flex-col items-center gap-3">
-        <Loader2 className="h-10 w-10 text-neon animate-spin" />
-        <p className="text-muted-foreground">Loading channel...</p>
-      </div>
-    </div>
-  );
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { channel: id } = await params;
+  const meta = await fetchChannelMeta(id);
+  if (!meta?.name) {
+    return {
+      title: "ALLtvLive - Live TV Channel",
+      description: "Watch this live TV channel free on ALLtvLive.",
+    };
+  }
+  const title = `${meta.name} - Live on ALLtvLive`;
+  const description = `Watch ${meta.name} live for free — ${
+    meta.categories?.join(", ") || "TV"
+  } from ${meta.country || "worldwide"}. No signup required.`;
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: meta.logo ? [{ url: meta.logo }] : undefined,
+      type: "video.other",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: meta.logo ? [meta.logo] : undefined,
+    },
+  };
+}
+
+export default async function ChannelPage({ params }: Props) {
+  const { channel } = await params;
+  return <ChannelRedirect channelId={channel} />;
 }

@@ -1,5 +1,46 @@
 import { create } from "zustand";
 import type { ChannelWithMeta, FilterState } from "./types";
+import {
+  loadHistory,
+  recordWatch,
+  clearHistory,
+  getPopularChannelIds,
+} from "./history/watchHistory";
+
+export type ViewMode = "grid" | "list" | "compact";
+
+export interface UserSettings {
+  autoplay: boolean;
+  viewMode: ViewMode;
+}
+
+const SETTINGS_KEY = "alltvlive-settings";
+
+function loadSettings(): UserSettings {
+  if (typeof window === "undefined") {
+    return { autoplay: true, viewMode: "grid" };
+  }
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return { autoplay: true, viewMode: "grid" };
+    const parsed = JSON.parse(raw);
+    return {
+      autoplay: parsed?.autoplay ?? true,
+      viewMode: (parsed?.viewMode as ViewMode) ?? "grid",
+    };
+  } catch {
+    return { autoplay: true, viewMode: "grid" };
+  }
+}
+
+function saveSettings(settings: UserSettings) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    // ignore
+  }
+}
 
 interface AppState {
   // Player
@@ -28,6 +69,10 @@ interface AppState {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
 
+  // Settings sheet
+  settingsOpen: boolean;
+  setSettingsOpen: (open: boolean) => void;
+
   // View
   activeView: "home" | "countries" | "categories" | "languages" | "favorites";
   setActiveView: (
@@ -43,6 +88,26 @@ interface AppState {
   userCountryName: string | null;
   userCountryFlag: string | null;
   setUserCountry: (code: string, name: string, flag: string) => void;
+
+  // Watch history / trending
+  historyIds: string[];
+  popularIds: string[];
+  historyHydrated: boolean;
+  hydrateHistory: () => void;
+  logWatch: (channelId: string) => void;
+  clearWatchHistory: () => void;
+
+  // Settings
+  settings: UserSettings;
+  settingsHydrated: boolean;
+  hydrateSettings: () => void;
+  updateSettings: (patch: Partial<UserSettings>) => void;
+
+  // Player error tracking
+  lastErrorChannelId: string | null;
+  reportOpen: boolean;
+  openReportDialog: (channelId: string) => void;
+  closeReportDialog: () => void;
 }
 
 function loadFavorites(): string[] {
@@ -65,8 +130,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   currentChannel: null,
   playerOpen: false,
   setCurrentChannel: (channel) => set({ currentChannel: channel }),
-  openPlayer: (channel) =>
-    set({ currentChannel: channel, playerOpen: true }),
+  openPlayer: (channel) => {
+    set({ currentChannel: channel, playerOpen: true });
+    // record in history
+    get().logWatch(channel.id);
+  },
   closePlayer: () => set({ playerOpen: false }),
 
   // Favorites (start empty, hydrate on client)
@@ -110,6 +178,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   sidebarOpen: false,
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
 
+  // Settings sheet
+  settingsOpen: false,
+  setSettingsOpen: (open) => set({ settingsOpen: open }),
+
   // View
   activeView: "home",
   setActiveView: (view) => set({ activeView: view }),
@@ -124,4 +196,45 @@ export const useAppStore = create<AppState>((set, get) => ({
   userCountryFlag: null,
   setUserCountry: (code, name, flag) =>
     set({ userCountry: code, userCountryName: name, userCountryFlag: flag }),
+
+  // Watch history
+  historyIds: [],
+  popularIds: [],
+  historyHydrated: false,
+  hydrateHistory: () => {
+    if (get().historyHydrated) return;
+    const historyIds = loadHistory().map((e) => e.channelId);
+    const popularIds = getPopularChannelIds(12);
+    set({ historyIds, popularIds, historyHydrated: true });
+  },
+  logWatch: (channelId) => {
+    recordWatch(channelId);
+    const historyIds = loadHistory().map((e) => e.channelId);
+    const popularIds = getPopularChannelIds(12);
+    set({ historyIds, popularIds });
+  },
+  clearWatchHistory: () => {
+    clearHistory();
+    set({ historyIds: [], popularIds: [] });
+  },
+
+  // Settings
+  settings: { autoplay: true, viewMode: "grid" },
+  settingsHydrated: false,
+  hydrateSettings: () => {
+    if (get().settingsHydrated) return;
+    set({ settings: loadSettings(), settingsHydrated: true });
+  },
+  updateSettings: (patch) => {
+    const settings = { ...get().settings, ...patch };
+    saveSettings(settings);
+    set({ settings });
+  },
+
+  // Report dialog
+  lastErrorChannelId: null,
+  reportOpen: false,
+  openReportDialog: (channelId) =>
+    set({ reportOpen: true, lastErrorChannelId: channelId }),
+  closeReportDialog: () => set({ reportOpen: false }),
 }));

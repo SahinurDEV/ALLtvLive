@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useCallback } from "react";
+import { memo, useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Play, Heart, Users, Radio } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import type { ChannelWithMeta } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
 import { getPlaceholderLogo, formatViewerCount } from "@/lib/utils";
+import { getCachedHealth, type HealthStatus } from "@/lib/player/streamHealthCheck";
 
 interface ChannelCardProps {
   channel: ChannelWithMeta;
@@ -23,6 +24,12 @@ export const ChannelCard = memo(function ChannelCard({
   const favorites = useAppStore((s) => s.favorites);
   const isFav = favorites.includes(channel.id);
   const [imgError, setImgError] = useState(false);
+  const [health, setHealth] = useState<HealthStatus>("unknown");
+
+  useEffect(() => {
+    // Read cached status only; never blocks initial render
+    setHealth(getCachedHealth(channel.id));
+  }, [channel.id]);
 
   const handlePlay = useCallback(() => {
     openPlayer(channel);
@@ -65,12 +72,21 @@ export const ChannelCard = memo(function ChannelCard({
             onError={() => setImgError(true)}
           />
 
-          {/* Live indicator */}
+          {/* Live indicator + health dot */}
           {channel.isLive && (
             <div className="absolute top-2 left-2 flex items-center gap-1 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
               <Radio className="h-3 w-3 animate-pulse" />
               LIVE
             </div>
+          )}
+          {health !== "unknown" && (
+            <div
+              className={`absolute top-2 left-16 h-2 w-2 rounded-full ring-2 ring-black/40 ${
+                health === "online" ? "bg-emerald-400" : "bg-red-500"
+              }`}
+              aria-label={health === "online" ? "Stream recently working" : "Stream recently failed"}
+              title={health === "online" ? "Stream recently working" : "Stream recently failed"}
+            />
           )}
 
           {/* Viewer count */}

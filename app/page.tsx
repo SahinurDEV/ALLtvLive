@@ -7,9 +7,17 @@ import { MobileNav } from "@/components/MobileNav";
 import { InlinePlayer } from "@/components/InlinePlayer";
 import { ChannelGrid } from "@/components/ChannelGrid";
 import { FavoritesView } from "@/components/FavoritesView";
+import { ContinueWatchingRow } from "@/components/home/ContinueWatchingRow";
+import { TrendingRow } from "@/components/home/TrendingRow";
+import { QuickFilterChips } from "@/components/home/QuickFilterChips";
+import { SettingsSheet } from "@/components/settings/SettingsSheet";
+import { ReportBrokenStreamDialog } from "@/components/ReportBrokenStreamDialog";
+import { FloatingMiniPlayer } from "@/components/player/FloatingMiniPlayer";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import { useChannels } from "@/hooks/useChannels";
 import { useAppStore } from "@/lib/store";
-import { Loader2, Tv } from "lucide-react";
+import { Tv, AlertTriangle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
   const {
@@ -27,18 +35,21 @@ export default function HomePage() {
   const activeView = useAppStore((s) => s.activeView);
   const filters = useAppStore((s) => s.filters);
   const openPlayer = useAppStore((s) => s.openPlayer);
-  const currentChannel = useAppStore((s) => s.currentChannel);
   const hydrateFavorites = useAppStore((s) => s.hydrateFavorites);
+  const hydrateHistory = useAppStore((s) => s.hydrateHistory);
+  const hydrateSettings = useAppStore((s) => s.hydrateSettings);
+  const settings = useAppStore((s) => s.settings);
   const userCountry = useAppStore((s) => s.userCountry);
   const userCountryName = useAppStore((s) => s.userCountryName);
   const userCountryFlag = useAppStore((s) => s.userCountryFlag);
   const setUserCountry = useAppStore((s) => s.setUserCountry);
   const hasAutoPlayed = useRef(false);
 
-  // Hydrate favorites from localStorage on client mount
   useEffect(() => {
     hydrateFavorites();
-  }, [hydrateFavorites]);
+    hydrateHistory();
+    hydrateSettings();
+  }, [hydrateFavorites, hydrateHistory, hydrateSettings]);
 
   // Detect user country via IP geolocation (with fallback)
   useEffect(() => {
@@ -51,7 +62,6 @@ export default function HomePage() {
         .map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65))
         .join("");
 
-    // Try primary API, then fallback
     fetch("https://ipapi.co/json/")
       .then((res) => {
         if (!res.ok) throw new Error("ipapi failed");
@@ -66,7 +76,6 @@ export default function HomePage() {
         }
       })
       .catch(() => {
-        // Fallback API
         fetch("https://ipwho.is/")
           .then((res) => res.json())
           .then((data) => {
@@ -79,46 +88,41 @@ export default function HomePage() {
       });
   }, [userCountry, setUserCountry]);
 
-  // Auto-play: prefer local channel, fallback to random from top 50
+  // Auto-play
   useEffect(() => {
     if (hasAutoPlayed.current) return;
     if (allChannels.length === 0) return;
+    if (!settings.autoplay) {
+      hasAutoPlayed.current = true;
+      return;
+    }
 
-    // Wait a moment for country detection, but don't block forever
     if (!userCountry) {
-      // Set a short timeout — if country isn't detected in 1.5s, play global
       const timer = setTimeout(() => {
         if (hasAutoPlayed.current) return;
         hasAutoPlayed.current = true;
         const top = allChannels.slice(0, 50);
-        const random = top[Math.floor(Math.random() * top.length)];
-        openPlayer(random);
+        openPlayer(top[Math.floor(Math.random() * top.length)]);
       }, 1500);
       return () => clearTimeout(timer);
     }
 
     hasAutoPlayed.current = true;
 
-    // Try local channels first
     if (localChannels.length > 0) {
       const top = localChannels.slice(0, Math.min(20, localChannels.length));
-      const random = top[Math.floor(Math.random() * top.length)];
-      openPlayer(random);
+      openPlayer(top[Math.floor(Math.random() * top.length)]);
     } else {
-      // Fallback to global top 50
       const top = allChannels.slice(0, 50);
-      const random = top[Math.floor(Math.random() * top.length)];
-      openPlayer(random);
+      openPlayer(top[Math.floor(Math.random() * top.length)]);
     }
-  }, [allChannels, localChannels, userCountry, openPlayer]);
+  }, [allChannels, localChannels, userCountry, openPlayer, settings.autoplay]);
 
   const viewTitle = useMemo(() => {
     switch (activeView) {
       case "countries": {
         if (filters.countries.length === 1) {
-          const country = countries.find(
-            (c) => c.code === filters.countries[0]
-          );
+          const country = countries.find((c) => c.code === filters.countries[0]);
           return country ? `${country.flag} ${country.name}` : "Countries";
         }
         return "All Countries";
@@ -132,9 +136,7 @@ export default function HomePage() {
       }
       case "languages": {
         if (filters.languages.length === 1) {
-          const lang = languages.find(
-            (l) => l.code === filters.languages[0]
-          );
+          const lang = languages.find((l) => l.code === filters.languages[0]);
           return lang ? lang.name : "Languages";
         }
         return "All Languages";
@@ -152,12 +154,24 @@ export default function HomePage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Failed to load channels</h1>
-          <p className="text-muted-foreground">
-            Please check your connection and refresh the page.
+      <div className="flex items-center justify-center min-h-screen px-4">
+        <div className="text-center max-w-md">
+          <div className="w-14 h-14 mx-auto rounded-full bg-yellow-500/10 flex items-center justify-center mb-4">
+            <AlertTriangle className="h-7 w-7 text-yellow-500" />
+          </div>
+          <h1 className="text-2xl font-bold mb-2">Couldn&apos;t load channels</h1>
+          <p className="text-muted-foreground mb-6">
+            The channel data source isn&apos;t reachable right now. Check your
+            connection and try again.
           </p>
+          <Button
+            variant="neon"
+            onClick={() => window.location.reload()}
+            className="gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </Button>
         </div>
       </div>
     );
@@ -175,11 +189,10 @@ export default function HomePage() {
         <Navbar />
 
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-6">
-          {/* Loading state — full page */}
           {isLoading && allChannels.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-4">
               <div className="relative">
-                <div className="w-20 h-20 rounded-full border-4 border-neon/20 border-t-neon animate-spin" />
+                <div className="w-20 h-20 rounded-full border-4 border-neon/20 border-t-neon animate-spin motion-reduce:animate-none" />
                 <Tv className="absolute inset-0 m-auto h-8 w-8 text-neon" />
               </div>
               <div className="text-center">
@@ -191,30 +204,52 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="max-w-[1800px] mx-auto">
-              {/* Player — always visible at the top */}
-              <div className="p-2 sm:p-3 md:p-4 lg:p-6 pb-0 sm:pb-0 md:pb-0 lg:pb-0">
+              <div className="sticky top-0 z-30 p-2 sm:p-3 md:p-4 lg:p-6 pb-2 md:pb-3 bg-background/95 backdrop-blur">
                 <InlinePlayer />
               </div>
 
-              {/* Channel sections below */}
               <div className="p-2 sm:p-3 md:p-4 lg:p-6 space-y-6 sm:space-y-8">
-                {/* Search results */}
+                {/* Search / filter results */}
                 {isFiltered && (
-                  <ChannelGrid
-                    channels={channels}
-                    isLoading={false}
-                    title={
-                      filters.search
-                        ? `Results for "${filters.search}"`
-                        : viewTitle
-                    }
-                  />
+                  <>
+                    {filters.search && (
+                      <p className="text-sm text-muted-foreground -mb-2">
+                        {channels.length.toLocaleString()} result
+                        {channels.length === 1 ? "" : "s"} for
+                        <span className="text-foreground font-medium ml-1">
+                          &ldquo;{filters.search}&rdquo;
+                        </span>
+                      </p>
+                    )}
+                    <ChannelGrid
+                      channels={channels}
+                      isLoading={false}
+                      title={
+                        filters.search
+                          ? `Results for "${filters.search}"`
+                          : viewTitle
+                      }
+                      showViewToggle
+                    />
+                  </>
                 )}
 
-                {/* Home — local + trending + all */}
+                {/* Home layout */}
                 {!isFiltered && activeView === "home" && (
                   <>
-                    {/* Local channels from user's country — shown first */}
+                    <ContinueWatchingRow allChannels={allChannels} />
+
+                    <QuickFilterChips
+                      categories={categories}
+                      countries={countries}
+                      allChannels={allChannels}
+                    />
+
+                    <TrendingRow
+                      allChannels={allChannels}
+                      fallbackChannels={trendingChannels}
+                    />
+
                     {localChannels.length > 0 && userCountryName && (
                       <ChannelGrid
                         channels={localChannels}
@@ -225,31 +260,21 @@ export default function HomePage() {
                       />
                     )}
 
-                    {trendingChannels.length > 0 && (
-                      <ChannelGrid
-                        channels={trendingChannels}
-                        isLoading={false}
-                        title="Trending Now"
-                        pageSize={12}
-                        showLoadMore={false}
-                      />
-                    )}
                     <ChannelGrid
                       channels={channels}
                       isLoading={false}
                       title="All Channels"
                       pageSize={24}
                       showLoadMore={true}
+                      showViewToggle
                     />
                   </>
                 )}
 
-                {/* Favorites */}
                 {!isFiltered && activeView === "favorites" && (
                   <FavoritesView allChannels={allChannels} />
                 )}
 
-                {/* Browse views */}
                 {!isFiltered &&
                   (activeView === "countries" ||
                     activeView === "categories" ||
@@ -258,6 +283,7 @@ export default function HomePage() {
                       channels={channels}
                       isLoading={false}
                       title={viewTitle}
+                      showViewToggle
                     />
                   )}
               </div>
@@ -267,6 +293,12 @@ export default function HomePage() {
 
         <MobileNav />
       </div>
+
+      {/* Global overlays */}
+      <SettingsSheet />
+      <ReportBrokenStreamDialog />
+      <FloatingMiniPlayer />
+      <InstallPrompt />
     </div>
   );
 }
