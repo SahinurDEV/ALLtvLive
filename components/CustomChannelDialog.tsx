@@ -2,11 +2,55 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Save } from "lucide-react";
+import { X, Plus, Save, Trophy, Newspaper, Rocket, Globe2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
+
+interface Preset {
+  name: string;
+  url: string;
+  logo: string;
+  category: string;
+  icon: React.ReactNode;
+  hint: string;
+}
+
+const PRESETS: Preset[] = [
+  {
+    name: "FIFA World",
+    url: "https://www.youtube.com/@FIFA/live",
+    logo: "https://digitalhub.fifa.com/transform/f95c8d33-45e0-464a-b31f-fda3f9a55e2c/FIFA-Plus-Logo",
+    category: "Sports",
+    icon: <Trophy className="h-4 w-4" />,
+    hint: "FIFA official YouTube live",
+  },
+  {
+    name: "Al Jazeera English",
+    url: "https://live-hls-web-aje.getaj.net/AJE/index.m3u8",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/f/f2/Aljazeera_eng.png",
+    category: "News",
+    icon: <Newspaper className="h-4 w-4" />,
+    hint: "24/7 English news",
+  },
+  {
+    name: "DW English",
+    url: "https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/e/eb/Deutsche_Welle_symbol_2012.svg",
+    category: "News",
+    icon: <Globe2 className="h-4 w-4" />,
+    hint: "Deutsche Welle English",
+  },
+  {
+    name: "NASA TV Public",
+    url: "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/e/e5/NASA_logo.svg",
+    category: "Science",
+    icon: <Rocket className="h-4 w-4" />,
+    hint: "NASA public channel",
+  },
+];
 
 export function CustomChannelDialog() {
   const open = useAppStore((s) => s.customDialogOpen);
@@ -119,6 +163,38 @@ export function CustomChannelDialog() {
               </div>
 
               <form onSubmit={submit} className="p-4 space-y-3">
+                {!editing && (
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                      Popular presets
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {PRESETS.map((p) => (
+                        <button
+                          key={p.name}
+                          type="button"
+                          onClick={() => {
+                            setName(p.name);
+                            setUrl(p.url);
+                            setLogo(p.logo);
+                            setCategory(p.category);
+                          }}
+                          className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-border/50 text-left text-xs hover:border-neon/50 hover:bg-neon/5 transition-colors"
+                        >
+                          <span className="text-neon shrink-0">{p.icon}</span>
+                          <span className="flex-1 min-w-0">
+                            <span className="block font-medium truncate">{p.name}</span>
+                            <span className="block text-[9px] text-muted-foreground truncate">{p.hint}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-1.5">
+                      Tap to prefill, or fill in your own below.
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">
                     Channel name <span className="text-red-500">*</span>

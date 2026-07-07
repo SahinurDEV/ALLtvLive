@@ -308,6 +308,38 @@ export default function HomePage() {
                     />
                   )}
               </div>
+
+              <footer className="px-3 sm:px-4 lg:px-6 pt-2 pb-6 border-t border-border/30 mt-8">
+                <div className="max-w-3xl mx-auto text-center space-y-2">
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    ALLtvLive aggregates publicly available live TV streams from the open-source{" "}
+                    <a
+                      href="https://github.com/iptv-org/iptv"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-neon hover:underline"
+                    >
+                      iptv-org
+                    </a>{" "}
+                    project. All streams are delivered directly by their original broadcasters —
+                    we do not host, cache, or redistribute any video content.
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    <a href="/about" className="hover:text-neon transition-colors">
+                      About &amp; Disclaimer
+                    </a>
+                    <span className="mx-2">·</span>
+                    <a
+                      href="https://github.com/devSahinur/ALLtvLive"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-neon transition-colors"
+                    >
+                      GitHub
+                    </a>
+                  </p>
+                </div>
+              </footer>
             </div>
           )}
         </main>
