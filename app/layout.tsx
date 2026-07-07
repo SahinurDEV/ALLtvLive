@@ -1,8 +1,11 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "sonner";
 import "./globals.css";
+
+const ADSENSE_CLIENT_ID = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -43,6 +46,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {ADSENSE_CLIENT_ID && (
+          <meta name="google-adsense-account" content={ADSENSE_CLIENT_ID} />
+        )}
+      </head>
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
@@ -58,6 +66,15 @@ export default function RootLayout({
             closeButton
           />
         </ThemeProvider>
+        {ADSENSE_CLIENT_ID && (
+          <Script
+            id="adsbygoogle-init"
+            async
+            strategy="afterInteractive"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
+            crossOrigin="anonymous"
+          />
+        )}
       </body>
     </html>
   );

@@ -76,3 +76,12 @@ export interface PlayerState {
   volume: number;
   quality: string;
 }
+
+export interface CustomChannel {
+  id: string;
+  name: string;
+  url: string;
+  logo: string | null;
+  category: string | null;
+  addedAt: number;
+}

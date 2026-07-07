@@ -11,12 +11,49 @@ import type {
   Language,
   Logo,
   ChannelWithMeta,
+  CustomChannel,
 } from "@/lib/types";
 import { fetcher } from "@/lib/api";
 import { generateViewerCount } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
 
 const BASE_URL = "https://iptv-org.github.io/api";
+
+function customToChannelWithMeta(c: CustomChannel): ChannelWithMeta {
+  return {
+    id: c.id,
+    name: c.name,
+    alt_names: [],
+    network: null,
+    owners: [],
+    country: "INT",
+    subdivision: null,
+    city: null,
+    broadcast_area: [],
+    languages: [],
+    categories: c.category ? [c.category] : [],
+    is_nsfw: false,
+    launched: null,
+    closed: null,
+    replaced_by: null,
+    website: null,
+    logo: c.logo || null,
+    streams: [
+      {
+        channel: c.id,
+        feed: null,
+        title: c.name,
+        url: c.url,
+        quality: null,
+        user_agent: null,
+        referrer: null,
+      },
+    ],
+    countryInfo: undefined,
+    viewerCount: 0,
+    isLive: true,
+  };
+}
 
 export function useChannels() {
   const {
@@ -64,6 +101,11 @@ export function useChannels() {
   const filters = useAppStore((s) => s.filters);
   const setAllChannels = useAppStore((s) => s.setAllChannels);
   const userCountry = useAppStore((s) => s.userCountry);
+  const brokenChannelIds = useAppStore((s) => s.brokenChannelIds);
+  const hideBroken = useAppStore((s) => s.settings.hideBrokenChannels);
+  const customChannels = useAppStore((s) => s.customChannels);
+
+  const brokenSet = useMemo(() => new Set(brokenChannelIds), [brokenChannelIds]);
 
   // Build stream lookup map (channel id -> streams)
   const streamMap = useMemo(() => {
@@ -103,9 +145,14 @@ export function useChannels() {
   // Stable viewer counts
   const viewerCountRef = useRef(new Map<string, number>());
 
+  // Convert custom channels to ChannelWithMeta format
+  const customEnriched = useMemo(() => {
+    return customChannels.map<ChannelWithMeta>((c) => customToChannelWithMeta(c));
+  }, [customChannels]);
+
   // Build enriched channels — only those with at least one stream
   const enrichedChannels = useMemo(() => {
-    if (!channels || !streams) return [];
+    if (!channels || !streams) return customEnriched;
 
     const result: ChannelWithMeta[] = [];
     const vcMap = viewerCountRef.current;
@@ -116,6 +163,9 @@ export function useChannels() {
       const channelStreams = streamMap.get(channel.id);
       // Skip channels with no streams at all
       if (!channelStreams || channelStreams.length === 0) continue;
+
+      // Filter or deprioritize broken channels
+      if (hideBroken && brokenSet.has(channel.id)) continue;
 
       if (!vcMap.has(channel.id)) {
         vcMap.set(channel.id, generateViewerCount());
@@ -133,11 +183,18 @@ export function useChannels() {
       });
     }
 
-    // Sort by viewer count
-    result.sort((a, b) => b.viewerCount - a.viewerCount);
+    // Sort by viewer count, but push any broken channels to the bottom
+    // (they only reach here if hideBroken is false)
+    result.sort((a, b) => {
+      const aBroken = brokenSet.has(a.id) ? 1 : 0;
+      const bBroken = brokenSet.has(b.id) ? 1 : 0;
+      if (aBroken !== bBroken) return aBroken - bBroken;
+      return b.viewerCount - a.viewerCount;
+    });
 
-    return result;
-  }, [channels, streams, streamMap, countryMap, logoMap]);
+    // Prepend custom channels so users' own picks show first
+    return [...customEnriched, ...result];
+  }, [channels, streams, streamMap, countryMap, logoMap, brokenSet, hideBroken, customEnriched]);
 
   // Store all channels for player navigation
   useEffect(() => {

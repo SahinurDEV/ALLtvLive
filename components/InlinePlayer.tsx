@@ -44,6 +44,8 @@ export function InlinePlayer() {
     openPlayer,
     openReportDialog,
     settings,
+    markChannelBroken,
+    unmarkChannelBroken,
   } = useAppStore();
 
   const playerRef = useRef<HTMLDivElement>(null);
@@ -68,12 +70,20 @@ export function InlinePlayer() {
   } = useUniversalPlayer({
     channel: currentChannel,
     autoplay: settings.autoplay,
+    onFatalError: markChannelBroken,
   });
 
   const isPlaying = phase === "playing";
   const isPaused = phase === "paused";
 
   const isFav = currentChannel ? favorites.includes(currentChannel.id) : false;
+
+  // If a previously-broken channel starts playing, clear its broken flag
+  useEffect(() => {
+    if (phase === "playing" && currentChannel) {
+      unmarkChannelBroken(currentChannel.id);
+    }
+  }, [phase, currentChannel, unmarkChannelBroken]);
 
   const navigateChannel = useCallback(
     (direction: "next" | "prev") => {

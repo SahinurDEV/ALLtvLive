@@ -12,6 +12,8 @@ import {
   ChevronRight,
   ChevronDown,
   Tv,
+  Radio,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -37,6 +39,8 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
     setCategoryFilter,
     setLanguageFilter,
     favorites,
+    customChannels,
+    openCustomDialog,
     clearFilters,
   } = useAppStore();
 
@@ -81,6 +85,7 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
     { id: "categories" as const, label: "Categories", icon: LayoutGrid },
     { id: "languages" as const, label: "Languages", icon: LanguagesIcon },
     { id: "favorites" as const, label: "Favorites", icon: Heart, count: favorites.length },
+    { id: "custom" as const, label: "My Channels", icon: Radio, count: customChannels.length },
   ];
 
   return (
@@ -148,6 +153,17 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
                   )}
                 </button>
               ))}
+
+              <button
+                onClick={() => {
+                  openCustomDialog();
+                  setSidebarOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium border border-dashed border-border/60 text-muted-foreground hover:text-neon hover:border-neon/40 hover:bg-neon/5 transition-colors mt-1"
+              >
+                <Plus className="h-4 w-4 shrink-0" />
+                Add Custom Channel
+              </button>
 
               <Separator className="my-3" />
 

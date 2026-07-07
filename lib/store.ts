@@ -1,35 +1,43 @@
 import { create } from "zustand";
-import type { ChannelWithMeta, FilterState } from "./types";
+import type { ChannelWithMeta, CustomChannel, FilterState } from "./types";
 import {
   loadHistory,
   recordWatch,
   clearHistory,
   getPopularChannelIds,
 } from "./history/watchHistory";
+import {
+  getAllOfflineIds,
+  clearHealthCache,
+  setHealth,
+} from "./player/streamHealthCheck";
 
 export type ViewMode = "grid" | "list" | "compact";
 
 export interface UserSettings {
   autoplay: boolean;
   viewMode: ViewMode;
+  hideBrokenChannels: boolean;
 }
 
 const SETTINGS_KEY = "alltvlive-settings";
+const CUSTOM_CHANNELS_KEY = "alltvlive-custom-channels";
 
 function loadSettings(): UserSettings {
   if (typeof window === "undefined") {
-    return { autoplay: true, viewMode: "grid" };
+    return { autoplay: true, viewMode: "grid", hideBrokenChannels: true };
   }
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return { autoplay: true, viewMode: "grid" };
+    if (!raw) return { autoplay: true, viewMode: "grid", hideBrokenChannels: true };
     const parsed = JSON.parse(raw);
     return {
       autoplay: parsed?.autoplay ?? true,
       viewMode: (parsed?.viewMode as ViewMode) ?? "grid",
+      hideBrokenChannels: parsed?.hideBrokenChannels ?? true,
     };
   } catch {
-    return { autoplay: true, viewMode: "grid" };
+    return { autoplay: true, viewMode: "grid", hideBrokenChannels: true };
   }
 }
 
@@ -37,6 +45,27 @@ function saveSettings(settings: UserSettings) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    // ignore
+  }
+}
+
+function loadCustomChannels(): CustomChannel[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(CUSTOM_CHANNELS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomChannels(list: CustomChannel[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(CUSTOM_CHANNELS_KEY, JSON.stringify(list));
   } catch {
     // ignore
   }
@@ -74,9 +103,9 @@ interface AppState {
   setSettingsOpen: (open: boolean) => void;
 
   // View
-  activeView: "home" | "countries" | "categories" | "languages" | "favorites";
+  activeView: "home" | "countries" | "categories" | "languages" | "favorites" | "custom";
   setActiveView: (
-    view: "home" | "countries" | "categories" | "languages" | "favorites"
+    view: "home" | "countries" | "categories" | "languages" | "favorites" | "custom"
   ) => void;
 
   // All channels (for navigation)
@@ -108,6 +137,28 @@ interface AppState {
   reportOpen: boolean;
   openReportDialog: (channelId: string) => void;
   closeReportDialog: () => void;
+
+  // Broken channels (playback failed)
+  brokenChannelIds: string[];
+  brokenHydrated: boolean;
+  hydrateBrokenChannels: () => void;
+  markChannelBroken: (channelId: string) => void;
+  unmarkChannelBroken: (channelId: string) => void;
+  clearAllBrokenChannels: () => void;
+
+  // Custom user channels
+  customChannels: CustomChannel[];
+  customHydrated: boolean;
+  hydrateCustomChannels: () => void;
+  addCustomChannel: (data: Omit<CustomChannel, "id" | "addedAt">) => CustomChannel;
+  updateCustomChannel: (id: string, patch: Partial<Omit<CustomChannel, "id" | "addedAt">>) => void;
+  removeCustomChannel: (id: string) => void;
+
+  // Custom channel dialog
+  customDialogOpen: boolean;
+  editingCustomId: string | null;
+  openCustomDialog: (editingId?: string | null) => void;
+  closeCustomDialog: () => void;
 }
 
 function loadFavorites(): string[] {
@@ -219,7 +270,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   // Settings
-  settings: { autoplay: true, viewMode: "grid" },
+  settings: { autoplay: true, viewMode: "grid", hideBrokenChannels: true },
   settingsHydrated: false,
   hydrateSettings: () => {
     if (get().settingsHydrated) return;
@@ -237,4 +288,78 @@ export const useAppStore = create<AppState>((set, get) => ({
   openReportDialog: (channelId) =>
     set({ reportOpen: true, lastErrorChannelId: channelId }),
   closeReportDialog: () => set({ reportOpen: false }),
+
+  // Broken channels
+  brokenChannelIds: [],
+  brokenHydrated: false,
+  hydrateBrokenChannels: () => {
+    if (get().brokenHydrated) return;
+    set({ brokenChannelIds: getAllOfflineIds(), brokenHydrated: true });
+  },
+  markChannelBroken: (channelId) => {
+    setHealth(channelId, "offline");
+    const current = get().brokenChannelIds;
+    if (current.includes(channelId)) return;
+    set({ brokenChannelIds: [...current, channelId] });
+  },
+  unmarkChannelBroken: (channelId) => {
+    setHealth(channelId, "online");
+    set({
+      brokenChannelIds: get().brokenChannelIds.filter((id) => id !== channelId),
+    });
+  },
+  clearAllBrokenChannels: () => {
+    clearHealthCache();
+    set({ brokenChannelIds: [] });
+  },
+
+  // Custom channels
+  customChannels: [],
+  customHydrated: false,
+  hydrateCustomChannels: () => {
+    if (get().customHydrated) return;
+    set({ customChannels: loadCustomChannels(), customHydrated: true });
+  },
+  addCustomChannel: (data) => {
+    const channel: CustomChannel = {
+      id: `custom-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      name: data.name.trim(),
+      url: data.url.trim(),
+      logo: data.logo?.trim() || null,
+      category: data.category?.trim() || null,
+      addedAt: Date.now(),
+    };
+    const next = [channel, ...get().customChannels];
+    saveCustomChannels(next);
+    set({ customChannels: next });
+    return channel;
+  },
+  updateCustomChannel: (id, patch) => {
+    const next = get().customChannels.map((c) =>
+      c.id === id
+        ? {
+            ...c,
+            ...("name" in patch ? { name: patch.name!.trim() } : {}),
+            ...("url" in patch ? { url: patch.url!.trim() } : {}),
+            ...("logo" in patch ? { logo: patch.logo?.trim() || null } : {}),
+            ...("category" in patch ? { category: patch.category?.trim() || null } : {}),
+          }
+        : c
+    );
+    saveCustomChannels(next);
+    set({ customChannels: next });
+  },
+  removeCustomChannel: (id) => {
+    const next = get().customChannels.filter((c) => c.id !== id);
+    saveCustomChannels(next);
+    set({ customChannels: next });
+  },
+
+  // Custom channel dialog
+  customDialogOpen: false,
+  editingCustomId: null,
+  openCustomDialog: (editingId = null) =>
+    set({ customDialogOpen: true, editingCustomId: editingId }),
+  closeCustomDialog: () =>
+    set({ customDialogOpen: false, editingCustomId: null }),
 }));

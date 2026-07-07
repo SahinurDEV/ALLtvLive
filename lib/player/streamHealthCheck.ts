@@ -51,3 +51,24 @@ export function setHealth(channelId: string, status: HealthStatus) {
 export function reportPlaybackResult(channelId: string, ok: boolean) {
   setHealth(channelId, ok ? "online" : "offline");
 }
+
+export function getAllOfflineIds(): string[] {
+  const store = readStore();
+  const now = Date.now();
+  const ids: string[] = [];
+  for (const [id, entry] of Object.entries(store)) {
+    if (entry.status === "offline" && now - entry.checkedAt <= TTL_MS) {
+      ids.push(id);
+    }
+  }
+  return ids;
+}
+
+export function clearHealthCache() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}

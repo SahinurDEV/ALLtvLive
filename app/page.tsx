@@ -7,6 +7,9 @@ import { MobileNav } from "@/components/MobileNav";
 import { InlinePlayer } from "@/components/InlinePlayer";
 import { ChannelGrid } from "@/components/ChannelGrid";
 import { FavoritesView } from "@/components/FavoritesView";
+import { CustomChannelsView } from "@/components/CustomChannelsView";
+import { CustomChannelDialog } from "@/components/CustomChannelDialog";
+import { AdSlot } from "@/components/ads/AdSlot";
 import { ContinueWatchingRow } from "@/components/home/ContinueWatchingRow";
 import { TrendingRow } from "@/components/home/TrendingRow";
 import { QuickFilterChips } from "@/components/home/QuickFilterChips";
@@ -38,6 +41,8 @@ export default function HomePage() {
   const hydrateFavorites = useAppStore((s) => s.hydrateFavorites);
   const hydrateHistory = useAppStore((s) => s.hydrateHistory);
   const hydrateSettings = useAppStore((s) => s.hydrateSettings);
+  const hydrateBrokenChannels = useAppStore((s) => s.hydrateBrokenChannels);
+  const hydrateCustomChannels = useAppStore((s) => s.hydrateCustomChannels);
   const settings = useAppStore((s) => s.settings);
   const userCountry = useAppStore((s) => s.userCountry);
   const userCountryName = useAppStore((s) => s.userCountryName);
@@ -49,7 +54,15 @@ export default function HomePage() {
     hydrateFavorites();
     hydrateHistory();
     hydrateSettings();
-  }, [hydrateFavorites, hydrateHistory, hydrateSettings]);
+    hydrateBrokenChannels();
+    hydrateCustomChannels();
+  }, [
+    hydrateFavorites,
+    hydrateHistory,
+    hydrateSettings,
+    hydrateBrokenChannels,
+    hydrateCustomChannels,
+  ]);
 
   // Detect user country via IP geolocation (with fallback)
   useEffect(() => {
@@ -250,6 +263,8 @@ export default function HomePage() {
                       fallbackChannels={trendingChannels}
                     />
 
+                    <AdSlot slot="1111111111" />
+
                     {localChannels.length > 0 && userCountryName && (
                       <ChannelGrid
                         channels={localChannels}
@@ -268,11 +283,17 @@ export default function HomePage() {
                       showLoadMore={true}
                       showViewToggle
                     />
+
+                    <AdSlot slot="2222222222" />
                   </>
                 )}
 
                 {!isFiltered && activeView === "favorites" && (
                   <FavoritesView allChannels={allChannels} />
+                )}
+
+                {!isFiltered && activeView === "custom" && (
+                  <CustomChannelsView allChannels={allChannels} />
                 )}
 
                 {!isFiltered &&
@@ -297,6 +318,7 @@ export default function HomePage() {
       {/* Global overlays */}
       <SettingsSheet />
       <ReportBrokenStreamDialog />
+      <CustomChannelDialog />
       <FloatingMiniPlayer />
       <InstallPrompt />
     </div>

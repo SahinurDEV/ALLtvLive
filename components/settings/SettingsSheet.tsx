@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Trash2, Sun, Moon, Monitor, LayoutGrid, List, LayoutList, PlayCircle } from "lucide-react";
+import { X, Trash2, Sun, Moon, Monitor, LayoutGrid, List, LayoutList, PlayCircle, ShieldCheck, RefreshCw } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { useAppStore, type ViewMode } from "@/lib/store";
@@ -70,6 +70,8 @@ export function SettingsSheet() {
   const clearWatchHistory = useAppStore((s) => s.clearWatchHistory);
   const favorites = useAppStore((s) => s.favorites);
   const toggleFavorite = useAppStore((s) => s.toggleFavorite);
+  const brokenCount = useAppStore((s) => s.brokenChannelIds.length);
+  const clearAllBrokenChannels = useAppStore((s) => s.clearAllBrokenChannels);
   const { theme, setTheme } = useTheme();
 
   // Close on Escape
@@ -148,6 +150,45 @@ export function SettingsSheet() {
                     aria-label="Toggle autoplay"
                   />
                 </label>
+              </section>
+
+              {/* Channel reliability */}
+              <section>
+                <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-neon" />
+                  Channel reliability
+                </h3>
+                <label className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border/50 cursor-pointer hover:bg-secondary/50">
+                  <div className="text-sm">
+                    <div className="font-medium">Hide broken channels</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      Automatically skip channels that failed to play
+                      {brokenCount > 0 && (
+                        <span className="text-neon"> · {brokenCount} known broken</span>
+                      )}
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.hideBrokenChannels}
+                    onChange={(e) => updateSettings({ hideBrokenChannels: e.target.checked })}
+                    className="h-5 w-5 accent-neon"
+                    aria-label="Toggle hide broken channels"
+                  />
+                </label>
+                {brokenCount > 0 && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2 mt-2"
+                    onClick={() => {
+                      clearAllBrokenChannels();
+                      toast.success("Reset — all channels are eligible again");
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Reset broken list ({brokenCount})
+                  </Button>
+                )}
               </section>
 
               {/* View mode */}
