@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useRef, useCallback, useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Maximize2,
   Minimize2,
@@ -26,6 +26,18 @@ import {
   ExternalLink,
   Signal,
   Languages as LanguagesIcon,
+  Gauge,
+  Moon,
+  Camera,
+  Keyboard,
+  MoreHorizontal,
+  Layers,
+  Sparkles,
+  Check,
+  Zap,
+  Copy,
+  AlertCircle,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +45,26 @@ import { useAppStore } from "@/lib/store";
 import { getPlaceholderLogo, formatViewerCount } from "@/lib/utils";
 import { useUniversalPlayer } from "@/lib/player/useUniversalPlayer";
 import { PlayerShell } from "@/components/player/PlayerShell";
+import { logViewEvent } from "@/lib/history/viewLogger";
 import { toast } from "sonner";
+
+const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+const SLEEP_PRESETS = [
+  { label: "Off", value: 0 },
+  { label: "15 min", value: 15 },
+  { label: "30 min", value: 30 },
+  { label: "1 hour", value: 60 },
+  { label: "2 hours", value: 120 },
+];
+
+function formatDuration(totalSeconds: number): string {
+  if (totalSeconds <= 0) return "0:00";
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = Math.floor(totalSeconds % 60);
+  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
 export function InlinePlayer() {
   const {
@@ -46,6 +77,8 @@ export function InlinePlayer() {
     settings,
     markChannelBroken,
     unmarkChannelBroken,
+    theaterMode,
+    toggleTheaterMode,
   } = useAppStore();
 
   const playerRef = useRef<HTMLDivElement>(null);
@@ -56,11 +89,24 @@ export function InlinePlayer() {
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
+  // NEW: player extras
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [sleepDeadline, setSleepDeadline] = useState<number | null>(null);
+  const [sleepRemainingSec, setSleepRemainingSec] = useState<number>(0);
+  const [watchElapsedSec, setWatchElapsedSec] = useState<number>(0);
+  const [showExtras, setShowExtras] = useState(false);
+  const [showSourceMenu, setShowSourceMenu] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [autoNext, setAutoNext] = useState(false);
+  const watchStartRef = useRef<number>(Date.now());
+
   const {
     videoRef,
     phase,
     activeSource,
+    sources,
     sourceIndex,
+    setSource,
     totalSources,
     isYouTube,
     youtubeEmbedUrl,
@@ -75,15 +121,64 @@ export function InlinePlayer() {
 
   const isPlaying = phase === "playing";
   const isPaused = phase === "paused";
+  const isError = phase === "error";
 
   const isFav = currentChannel ? favorites.includes(currentChannel.id) : false;
 
-  // If a previously-broken channel starts playing, clear its broken flag
+  // Clear broken flag on successful play + log view to server (once per channel/session)
   useEffect(() => {
     if (phase === "playing" && currentChannel) {
       unmarkChannelBroken(currentChannel.id);
+      logViewEvent({
+        channelId: currentChannel.id,
+        channelName: currentChannel.name,
+        country: currentChannel.countryInfo?.name || currentChannel.country || null,
+        category: currentChannel.categories?.[0] || null,
+      });
     }
   }, [phase, currentChannel, unmarkChannelBroken]);
+
+  // Reset watch counter when channel changes
+  useEffect(() => {
+    watchStartRef.current = Date.now();
+    setWatchElapsedSec(0);
+  }, [currentChannel?.id]);
+
+  // Tick watch counter every second while playing
+  useEffect(() => {
+    if (!isPlaying) return;
+    const iv = setInterval(() => {
+      setWatchElapsedSec(Math.floor((Date.now() - watchStartRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [isPlaying]);
+
+  // Apply playback rate
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.playbackRate = playbackRate;
+  }, [playbackRate, currentChannel?.id, videoRef]);
+
+  // Sleep timer tick — pauses video when it hits 0
+  useEffect(() => {
+    if (!sleepDeadline) {
+      setSleepRemainingSec(0);
+      return;
+    }
+    const tick = () => {
+      const remain = Math.max(0, Math.floor((sleepDeadline - Date.now()) / 1000));
+      setSleepRemainingSec(remain);
+      if (remain === 0) {
+        setSleepDeadline(null);
+        if (videoRef.current) videoRef.current.pause();
+        toast.info("Sleep timer ended", {
+          description: "Playback paused. Sweet dreams.",
+        });
+      }
+    };
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
+  }, [sleepDeadline, videoRef]);
 
   const navigateChannel = useCallback(
     (direction: "next" | "prev") => {
@@ -98,6 +193,13 @@ export function InlinePlayer() {
     },
     [currentChannel, allChannels, openPlayer]
   );
+
+  // Auto-next on error
+  useEffect(() => {
+    if (!autoNext || !isError) return;
+    const t = setTimeout(() => navigateChannel("next"), 3000);
+    return () => clearTimeout(t);
+  }, [autoNext, isError, navigateChannel]);
 
   const togglePlayPause = useCallback(() => {
     if (!videoRef.current) return;
@@ -145,9 +247,74 @@ export function InlinePlayer() {
         await videoRef.current.requestPictureInPicture();
       }
     } catch {
-      // PiP not supported / blocked
+      toast.error("Picture-in-Picture isn't available on this browser.");
     }
   }, [videoRef]);
+
+  const cyclePlaybackRate = useCallback(
+    (dir: "up" | "down") => {
+      const idx = PLAYBACK_SPEEDS.indexOf(playbackRate as typeof PLAYBACK_SPEEDS[number]);
+      const safeIdx = idx === -1 ? PLAYBACK_SPEEDS.indexOf(1 as typeof PLAYBACK_SPEEDS[number]) : idx;
+      const nextIdx =
+        dir === "up"
+          ? Math.min(PLAYBACK_SPEEDS.length - 1, safeIdx + 1)
+          : Math.max(0, safeIdx - 1);
+      const rate = PLAYBACK_SPEEDS[nextIdx];
+      setPlaybackRate(rate);
+      toast.success(`Speed ${rate}x`);
+    },
+    [playbackRate]
+  );
+
+  const handleScreenshot = useCallback(() => {
+    if (!videoRef.current || !currentChannel) return;
+    if (isYouTube) {
+      toast.info("Screenshots aren't available for YouTube streams.");
+      return;
+    }
+    const v = videoRef.current;
+    if (!v.videoWidth || !v.videoHeight) {
+      toast.error("Video isn't ready yet.");
+      return;
+    }
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = v.videoWidth;
+      canvas.height = v.videoHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("no context");
+      ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          toast.error("Screenshot failed — the stream may be cross-origin protected.");
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const ts = new Date().toISOString().replace(/[:.]/g, "-");
+        a.href = url;
+        a.download = `${currentChannel.id}-${ts}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast.success("Screenshot saved");
+      }, "image/png");
+    } catch {
+      toast.error("Screenshot blocked by the stream provider (CORS).");
+    }
+  }, [videoRef, currentChannel, isYouTube]);
+
+  const handleCopyLink = useCallback(async () => {
+    if (!currentChannel) return;
+    const url = `${window.location.origin}/${currentChannel.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Direct link copied");
+    } catch {
+      toast.error("Couldn't copy link");
+    }
+  }, [currentChannel]);
 
   const handleShare = useCallback(async () => {
     if (!currentChannel) return;
@@ -172,6 +339,16 @@ export function InlinePlayer() {
     }
   }, [currentChannel]);
 
+  const setSleepMinutes = useCallback((minutes: number) => {
+    if (minutes <= 0) {
+      setSleepDeadline(null);
+      toast.info("Sleep timer cleared");
+      return;
+    }
+    setSleepDeadline(Date.now() + minutes * 60_000);
+    toast.success(`Sleeping in ${minutes < 60 ? `${minutes} min` : `${minutes / 60} h`}`);
+  }, []);
+
   // Keyboard controls
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -188,6 +365,29 @@ export function InlinePlayer() {
         case "f":
           handleFullscreen();
           break;
+        case "t":
+          toggleTheaterMode();
+          break;
+        case "s":
+          handleScreenshot();
+          break;
+        case "n":
+          navigateChannel("next");
+          break;
+        case "p":
+          navigateChannel("prev");
+          break;
+        case ".":
+        case ">":
+          cyclePlaybackRate("up");
+          break;
+        case ",":
+        case "<":
+          cyclePlaybackRate("down");
+          break;
+        case "?":
+          setShowShortcuts((v) => !v);
+          break;
         case "ArrowUp":
           e.preventDefault();
           changeVolume(Math.min(100, volume + 5));
@@ -196,11 +396,26 @@ export function InlinePlayer() {
           e.preventDefault();
           changeVolume(Math.max(0, volume - 5));
           break;
+        case "Escape":
+          setShowExtras(false);
+          setShowSourceMenu(false);
+          setShowShortcuts(false);
+          break;
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [volume, togglePlayPause, toggleMute, handleFullscreen, changeVolume]);
+  }, [
+    volume,
+    togglePlayPause,
+    toggleMute,
+    handleFullscreen,
+    changeVolume,
+    toggleTheaterMode,
+    handleScreenshot,
+    navigateChannel,
+    cyclePlaybackRate,
+  ]);
 
   const resetControlsTimeout = useCallback(() => {
     setShowControls(true);
@@ -229,6 +444,19 @@ export function InlinePlayer() {
   );
 
   const streamQuality = activeSource?.quality || null;
+  const watchElapsedLabel = formatDuration(watchElapsedSec);
+  const sleepLabel = sleepRemainingSec > 0 ? formatDuration(sleepRemainingSec) : null;
+
+  const sourceOptions = useMemo(
+    () =>
+      sources.map((s, i) => ({
+        idx: i,
+        label: s.quality || s.type.toUpperCase(),
+        subLabel: s.type.toUpperCase(),
+        url: s.url,
+      })),
+    [sources]
+  );
 
   // No channel yet — placeholder
   if (!currentChannel) {
@@ -252,15 +480,23 @@ export function InlinePlayer() {
     );
   }
 
+  const playerWidthClass = theaterMode
+    ? "w-full md:w-[70%] lg:w-[72%] xl:w-[75%]"
+    : "w-full md:w-[60%] lg:w-[58%] xl:w-[55%]";
+
   return (
     <div
       id="main-player"
-      className="rounded-lg sm:rounded-xl overflow-hidden border border-border/30 bg-card shadow-[0_0_30px_rgba(0,255,157,0.04)]"
+      className={`rounded-lg sm:rounded-xl overflow-hidden border shadow-[0_0_30px_rgba(0,255,157,0.04)] transition-colors ${
+        theaterMode
+          ? "border-neon/40 shadow-[0_0_50px_rgba(0,255,157,0.15)] bg-black"
+          : "border-border/30 bg-card"
+      }`}
     >
       <div className="flex flex-col md:flex-row">
         <div
           ref={playerRef}
-          className="relative w-full md:w-[60%] lg:w-[58%] xl:w-[55%] aspect-video bg-black shrink-0"
+          className={`relative ${playerWidthClass} aspect-video bg-black shrink-0`}
           onMouseMove={resetControlsTimeout}
           onMouseLeave={() => setShowControls(false)}
           onMouseEnter={() => setShowControls(true)}
@@ -282,14 +518,39 @@ export function InlinePlayer() {
             onVideoClick={togglePlayPause}
           />
 
-          {/* Controls Overlay — hidden for YouTube (its iframe has its own) */}
+          {/* Watch time badge — top-left, always visible when playing */}
+          {isPlaying && !isYouTube && (
+            <div className="absolute top-2 left-2 z-10 pointer-events-none flex items-center gap-1.5">
+              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur text-white text-[10px] font-mono border border-white/10">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
+                </span>
+                {watchElapsedLabel}
+              </div>
+              {sleepLabel && (
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/25 backdrop-blur text-purple-200 text-[10px] font-mono border border-purple-500/40">
+                  <Moon className="h-2.5 w-2.5" />
+                  {sleepLabel}
+                </div>
+              )}
+              {playbackRate !== 1 && (
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-neon/25 backdrop-blur text-neon text-[10px] font-mono border border-neon/40">
+                  <Gauge className="h-2.5 w-2.5" />
+                  {playbackRate}x
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Controls Overlay — hidden for YouTube */}
           {!isYouTube && (
             <div
               className={`absolute inset-0 transition-opacity duration-300 pointer-events-none ${
                 showControls || isPaused ? "opacity-100" : "opacity-0"
               }`}
             >
-              {/* Top gradient — channel name (visible below md where info is stacked) */}
+              {/* Top gradient — channel name (mobile) */}
               <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/60 to-transparent p-2 sm:p-2.5 pointer-events-auto md:hidden">
                 <div className="flex items-center gap-1.5">
                   {currentChannel.logo && (
@@ -327,7 +588,6 @@ export function InlinePlayer() {
 
               {/* Bottom controls */}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pt-6 sm:pt-8 pb-1.5 sm:pb-2 px-1.5 sm:px-2.5 pointer-events-auto">
-                {/* Live indicator bar */}
                 <div className="w-full h-[2px] bg-white/15 rounded-full mb-1.5 sm:mb-2 overflow-hidden">
                   <div className="h-full bg-red-500 rounded-full w-full relative">
                     <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full shadow-[0_0_4px_rgba(239,68,68,0.8)]" />
@@ -423,6 +683,225 @@ export function InlinePlayer() {
 
                   {/* Right controls */}
                   <div className="flex items-center gap-0">
+                    {/* Source selector — only when multiple sources */}
+                    {totalSources > 1 && (
+                      <div className="relative">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setShowSourceMenu((v) => !v);
+                            setShowExtras(false);
+                          }}
+                          className="text-white hover:bg-white/10 active:bg-white/20 h-8 w-8 md:h-7 md:w-7 relative"
+                          aria-label="Change stream source"
+                          title={`Source ${sourceIndex + 1}/${totalSources}${streamQuality ? ` · ${streamQuality}` : ""}`}
+                        >
+                          <Layers className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-3.5 md:w-3.5" />
+                          <span className="absolute -top-0.5 -right-0.5 text-[8px] font-bold bg-neon text-black rounded-full h-3 w-3 flex items-center justify-center leading-none">
+                            {totalSources}
+                          </span>
+                        </Button>
+                        <AnimatePresence>
+                          {showSourceMenu && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 6 }}
+                              className="absolute bottom-full right-0 mb-2 w-56 rounded-xl bg-black/95 backdrop-blur border border-white/10 shadow-2xl overflow-hidden z-40"
+                            >
+                              <div className="px-3 py-2 border-b border-white/10 flex items-center gap-2">
+                                <Layers className="h-3.5 w-3.5 text-neon" />
+                                <span className="text-[11px] font-semibold text-white uppercase tracking-wider">
+                                  Streams
+                                </span>
+                                <span className="text-[10px] text-white/50 ml-auto">
+                                  {totalSources} available
+                                </span>
+                              </div>
+                              <div className="max-h-56 overflow-y-auto">
+                                {sourceOptions.map((opt) => (
+                                  <button
+                                    key={opt.idx}
+                                    onClick={() => {
+                                      setSource(opt.idx);
+                                      setShowSourceMenu(false);
+                                    }}
+                                    className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-colors ${
+                                      opt.idx === sourceIndex ? "bg-neon/10" : ""
+                                    }`}
+                                  >
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <span
+                                          className={`text-xs font-medium ${
+                                            opt.idx === sourceIndex ? "text-neon" : "text-white"
+                                          }`}
+                                        >
+                                          {opt.label}
+                                        </span>
+                                        <span className="text-[9px] font-mono text-white/40 px-1 rounded bg-white/5">
+                                          {opt.subLabel}
+                                        </span>
+                                      </div>
+                                      <p className="text-[10px] text-white/40 truncate mt-0.5">
+                                        {opt.url}
+                                      </p>
+                                    </div>
+                                    {opt.idx === sourceIndex && (
+                                      <Check className="h-3.5 w-3.5 text-neon" />
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
+
+                    {/* Extras "..." menu */}
+                    <div className="relative">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setShowExtras((v) => !v);
+                          setShowSourceMenu(false);
+                        }}
+                        className="text-white hover:bg-white/10 active:bg-white/20 h-8 w-8 md:h-7 md:w-7"
+                        aria-label="More options"
+                      >
+                        <MoreHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-3.5 md:w-3.5" />
+                      </Button>
+                      <AnimatePresence>
+                        {showExtras && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 6 }}
+                            className="absolute bottom-full right-0 mb-2 w-64 rounded-xl bg-black/95 backdrop-blur border border-white/10 shadow-2xl overflow-hidden z-40"
+                          >
+                            <div className="p-2 space-y-1">
+                              {/* Playback speed */}
+                              <div className="px-2 pt-1.5 pb-2 border-b border-white/10">
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                  <Gauge className="h-3 w-3 text-neon" />
+                                  <span className="text-[10px] font-semibold text-white/80 uppercase tracking-wider">
+                                    Speed
+                                  </span>
+                                  <span className="text-[10px] text-white/40 ml-auto">
+                                    {playbackRate}x
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-6 gap-1">
+                                  {PLAYBACK_SPEEDS.map((s) => (
+                                    <button
+                                      key={s}
+                                      onClick={() => {
+                                        setPlaybackRate(s);
+                                        toast.success(`Speed ${s}x`);
+                                      }}
+                                      className={`text-[10px] font-mono py-1 rounded transition-colors ${
+                                        playbackRate === s
+                                          ? "bg-neon text-black font-bold"
+                                          : "bg-white/5 text-white hover:bg-white/10"
+                                      }`}
+                                    >
+                                      {s}x
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Sleep timer */}
+                              <div className="px-2 py-2 border-b border-white/10">
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                  <Moon className="h-3 w-3 text-purple-400" />
+                                  <span className="text-[10px] font-semibold text-white/80 uppercase tracking-wider">
+                                    Sleep timer
+                                  </span>
+                                  {sleepLabel && (
+                                    <span className="text-[10px] text-purple-300 ml-auto font-mono">
+                                      {sleepLabel}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="grid grid-cols-5 gap-1">
+                                  {SLEEP_PRESETS.map((p) => (
+                                    <button
+                                      key={p.value}
+                                      onClick={() => setSleepMinutes(p.value)}
+                                      className={`text-[10px] py-1 rounded transition-colors ${
+                                        (p.value === 0 && !sleepDeadline) ||
+                                        (p.value > 0 &&
+                                          sleepDeadline &&
+                                          Math.abs(sleepDeadline - Date.now() - p.value * 60000) <
+                                            3000)
+                                          ? "bg-purple-500/40 text-purple-100 font-bold"
+                                          : "bg-white/5 text-white hover:bg-white/10"
+                                      }`}
+                                    >
+                                      {p.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Row toggles */}
+                              <ExtrasRow
+                                icon={<Sparkles className="h-3.5 w-3.5 text-yellow-400" />}
+                                label="Theater mode"
+                                hint="T"
+                                active={theaterMode}
+                                onClick={toggleTheaterMode}
+                              />
+                              <ExtrasRow
+                                icon={<Zap className="h-3.5 w-3.5 text-neon" />}
+                                label="Auto-play next on error"
+                                active={autoNext}
+                                onClick={() => setAutoNext((v) => !v)}
+                              />
+                              <ExtrasRow
+                                icon={<Camera className="h-3.5 w-3.5 text-blue-400" />}
+                                label="Screenshot"
+                                hint="S"
+                                onClick={() => {
+                                  handleScreenshot();
+                                  setShowExtras(false);
+                                }}
+                              />
+                              <ExtrasRow
+                                icon={<Copy className="h-3.5 w-3.5 text-white/70" />}
+                                label="Copy direct link"
+                                onClick={() => {
+                                  handleCopyLink();
+                                  setShowExtras(false);
+                                }}
+                              />
+                              <ExtrasRow
+                                icon={<AlertCircle className="h-3.5 w-3.5 text-red-400" />}
+                                label="Report broken stream"
+                                onClick={() => {
+                                  openReportDialog(currentChannel.id);
+                                  setShowExtras(false);
+                                }}
+                              />
+                              <ExtrasRow
+                                icon={<Keyboard className="h-3.5 w-3.5 text-white/70" />}
+                                label="Keyboard shortcuts"
+                                hint="?"
+                                onClick={() => {
+                                  setShowShortcuts(true);
+                                  setShowExtras(false);
+                                }}
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
                     <Button
                       variant="ghost"
                       size="icon"
@@ -431,6 +910,18 @@ export function InlinePlayer() {
                       aria-label="Picture in Picture"
                     >
                       <PictureInPicture2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleTheaterMode}
+                      className={`hover:bg-white/10 h-7 w-7 hidden md:flex ${
+                        theaterMode ? "text-neon" : "text-white"
+                      }`}
+                      aria-label="Theater mode"
+                      title="Theater mode (T)"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -450,6 +941,53 @@ export function InlinePlayer() {
               </div>
             </div>
           )}
+
+          {/* Keyboard shortcuts overlay */}
+          <AnimatePresence>
+            {showShortcuts && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-30 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+                onClick={() => setShowShortcuts(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="max-w-md w-full rounded-2xl bg-card border border-neon/30 p-5 shadow-[0_0_40px_rgba(0,255,157,0.15)]"
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <Keyboard className="h-4 w-4 text-neon" />
+                    <h3 className="font-bold text-sm">Keyboard shortcuts</h3>
+                    <button
+                      onClick={() => setShowShortcuts(false)}
+                      className="ml-auto text-muted-foreground hover:text-foreground text-xs"
+                    >
+                      Esc
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                    <Shortcut k="Space" desc="Play / Pause" />
+                    <Shortcut k="M" desc="Mute / Unmute" />
+                    <Shortcut k="F" desc="Fullscreen" />
+                    <Shortcut k="T" desc="Theater mode" />
+                    <Shortcut k="S" desc="Screenshot" />
+                    <Shortcut k="N" desc="Next channel" />
+                    <Shortcut k="P" desc="Previous channel" />
+                    <Shortcut k="↑ / ↓" desc="Volume ±5%" />
+                    <Shortcut k="> / <" desc="Speed ± step" />
+                    <Shortcut k="?" desc="Toggle this menu" />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-4 pt-3 border-t border-border/50 text-center">
+                    Press <kbd className="px-1 py-0.5 rounded bg-muted text-foreground font-mono">?</kbd> anytime to reopen.
+                  </p>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Channel Info Panel */}
@@ -480,10 +1018,60 @@ export function InlinePlayer() {
                 </p>
               )}
             </div>
+            {/* Big watch-time / status pill on info side */}
+            {isPlaying && (
+              <div className="hidden md:flex flex-col items-end gap-1 text-right">
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Watching
+                </span>
+                <span className="font-mono text-xs text-neon">
+                  {watchElapsedLabel}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Status chips row */}
+          <div className="flex flex-wrap gap-1.5 mt-3 md:mt-3.5">
+            {playbackRate !== 1 && (
+              <StatusChip
+                icon={<Gauge className="h-2.5 w-2.5" />}
+                text={`${playbackRate}x speed`}
+                tone="neon"
+              />
+            )}
+            {sleepLabel && (
+              <StatusChip
+                icon={<Moon className="h-2.5 w-2.5" />}
+                text={`Sleep in ${sleepLabel}`}
+                tone="purple"
+              />
+            )}
+            {theaterMode && (
+              <StatusChip
+                icon={<Sparkles className="h-2.5 w-2.5" />}
+                text="Theater mode"
+                tone="yellow"
+              />
+            )}
+            {autoNext && (
+              <StatusChip
+                icon={<Zap className="h-2.5 w-2.5" />}
+                text="Auto-next"
+                tone="neon"
+              />
+            )}
+            {totalSources > 1 && (
+              <StatusChip
+                icon={<Layers className="h-2.5 w-2.5" />}
+                text={`Source ${sourceIndex + 1}/${totalSources}`}
+                tone="neutral"
+              />
+            )}
           </div>
 
           {/* Detail rows */}
-          <div className="mt-3 md:mt-4 space-y-2 md:space-y-2.5 text-[11px] sm:text-xs text-muted-foreground flex-1 overflow-y-auto">
+          <div className="mt-3 md:mt-3.5 space-y-2 md:space-y-2.5 text-[11px] sm:text-xs text-muted-foreground flex-1 overflow-y-auto">
             <div className="flex items-center gap-4 flex-wrap">
               {currentChannel.countryInfo && (
                 <span className="flex items-center gap-1.5">
@@ -563,7 +1151,7 @@ export function InlinePlayer() {
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center gap-1.5 pt-3 mt-auto border-t border-border/30">
+          <div className="flex items-center gap-1.5 pt-3 mt-auto border-t border-border/30 flex-wrap">
             <Button
               variant={isFav ? "default" : "secondary"}
               size="sm"
@@ -590,6 +1178,21 @@ export function InlinePlayer() {
               Share
             </Button>
             <Button
+              variant="secondary"
+              size="sm"
+              onClick={toggleTheaterMode}
+              className={`gap-1 rounded-full text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3 hidden md:flex ${
+                theaterMode
+                  ? "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/25"
+                  : ""
+              }`}
+              aria-label="Toggle theater mode"
+              title="Theater mode (T)"
+            >
+              <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+              {theaterMode ? "Exit theater" : "Theater"}
+            </Button>
+            <Button
               variant="neon"
               size="sm"
               onClick={() => navigateChannel("next")}
@@ -603,6 +1206,87 @@ export function InlinePlayer() {
         </div>
       </div>
     </div>
+  );
+}
+
+function ExtrasRow({
+  icon,
+  label,
+  hint,
+  active,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  hint?: string;
+  active?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-xs transition-colors ${
+        active ? "bg-neon/10 text-neon" : "text-white hover:bg-white/5"
+      }`}
+    >
+      {icon}
+      <span className="flex-1">{label}</span>
+      {typeof active === "boolean" ? (
+        <span
+          className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${
+            active
+              ? "bg-neon text-black"
+              : "bg-white/10 text-white/60"
+          }`}
+        >
+          {active ? "ON" : "OFF"}
+        </span>
+      ) : hint ? (
+        <kbd className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-white/70">
+          {hint}
+        </kbd>
+      ) : (
+        <ChevronRight className="h-3 w-3 text-white/30" />
+      )}
+    </button>
+  );
+}
+
+function Shortcut({ k, desc }: { k: string; desc: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <kbd className="min-w-[52px] text-center text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/60">
+        {k}
+      </kbd>
+      <span className="text-muted-foreground">{desc}</span>
+    </div>
+  );
+}
+
+function StatusChip({
+  icon,
+  text,
+  tone,
+}: {
+  icon: React.ReactNode;
+  text: string;
+  tone: "neon" | "purple" | "yellow" | "neutral";
+}) {
+  const cls =
+    tone === "neon"
+      ? "bg-neon/10 text-neon border-neon/30"
+      : tone === "purple"
+        ? "bg-purple-500/15 text-purple-300 border-purple-500/40"
+        : tone === "yellow"
+          ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/40"
+          : "bg-muted/40 text-muted-foreground border-border/60";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[10px] ${cls}`}
+    >
+      {icon}
+      {text}
+    </span>
   );
 }
 

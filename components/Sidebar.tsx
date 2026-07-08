@@ -85,8 +85,12 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
     { id: "categories" as const, label: "Categories", icon: LayoutGrid },
     { id: "languages" as const, label: "Languages", icon: LanguagesIcon },
     { id: "favorites" as const, label: "Favorites", icon: Heart, count: favorites.length },
-    { id: "custom" as const, label: "My Channels", icon: Radio, count: customChannels.length },
   ];
+
+  const handleMyChannelsClick = () => {
+    openCustomDialog();
+    setSidebarOpen(false);
+  };
 
   return (
     <>
@@ -154,11 +158,25 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
                 </button>
               ))}
 
+              {/* My Channels — opens unified centered modal */}
               <button
-                onClick={() => {
-                  openCustomDialog();
-                  setSidebarOpen(false);
-                }}
+                onClick={handleMyChannelsClick}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <Radio className="h-4 w-4 shrink-0" />
+                My Channels
+                {customChannels.length > 0 && (
+                  <Badge
+                    variant="neon"
+                    className="ml-auto text-[10px] px-1.5 py-0"
+                  >
+                    {customChannels.length}
+                  </Badge>
+                )}
+              </button>
+
+              <button
+                onClick={handleMyChannelsClick}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium border border-dashed border-border/60 text-muted-foreground hover:text-neon hover:border-neon/40 hover:bg-neon/5 transition-colors mt-1"
               >
                 <Plus className="h-4 w-4 shrink-0" />
