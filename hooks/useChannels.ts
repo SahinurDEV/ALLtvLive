@@ -12,10 +12,12 @@ import type {
   Logo,
   ChannelWithMeta,
   CustomChannel,
+  BroadcastChannel,
 } from "@/lib/types";
 import { fetcher } from "@/lib/api";
 import { generateViewerCount } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
+import { useBroadcastChannels } from "@/hooks/useBroadcastChannels";
 
 const BASE_URL = "https://iptv-org.github.io/api";
 
@@ -50,6 +52,46 @@ function customToChannelWithMeta(c: CustomChannel): ChannelWithMeta {
       },
     ],
     countryInfo: undefined,
+    viewerCount: 0,
+    isLive: true,
+  };
+}
+
+function broadcastToChannelWithMeta(
+  c: BroadcastChannel,
+  countryMap: Map<string, Country>
+): ChannelWithMeta {
+  const countryCode = c.country || "INT";
+  return {
+    id: c.id,
+    name: c.name,
+    alt_names: [],
+    network: null,
+    owners: [],
+    country: countryCode,
+    subdivision: null,
+    city: null,
+    broadcast_area: [],
+    languages: [],
+    categories: c.category ? [c.category] : [],
+    is_nsfw: false,
+    launched: null,
+    closed: null,
+    replaced_by: null,
+    website: null,
+    logo: c.logo || null,
+    streams: [
+      {
+        channel: c.id,
+        feed: null,
+        title: c.name,
+        url: c.url,
+        quality: null,
+        user_agent: null,
+        referrer: null,
+      },
+    ],
+    countryInfo: countryMap.get(countryCode),
     viewerCount: 0,
     isLive: true,
   };
@@ -105,6 +147,8 @@ export function useChannels() {
   const hideBroken = useAppStore((s) => s.settings.hideBrokenChannels);
   const customChannels = useAppStore((s) => s.customChannels);
 
+  const { channels: broadcastChannels } = useBroadcastChannels();
+
   const brokenSet = useMemo(() => new Set(brokenChannelIds), [brokenChannelIds]);
 
   // Build stream lookup map (channel id -> streams)
@@ -150,9 +194,16 @@ export function useChannels() {
     return customChannels.map<ChannelWithMeta>((c) => customToChannelWithMeta(c));
   }, [customChannels]);
 
+  // Convert admin-managed broadcast channels
+  const broadcastEnriched = useMemo(() => {
+    return broadcastChannels.map<ChannelWithMeta>((c) =>
+      broadcastToChannelWithMeta(c, countryMap)
+    );
+  }, [broadcastChannels, countryMap]);
+
   // Build enriched channels — only those with at least one stream
   const enrichedChannels = useMemo(() => {
-    if (!channels || !streams) return customEnriched;
+    if (!channels || !streams) return [...customEnriched, ...broadcastEnriched];
 
     const result: ChannelWithMeta[] = [];
     const vcMap = viewerCountRef.current;
@@ -192,9 +243,19 @@ export function useChannels() {
       return b.viewerCount - a.viewerCount;
     });
 
-    // Prepend custom channels so users' own picks show first
-    return [...customEnriched, ...result];
-  }, [channels, streams, streamMap, countryMap, logoMap, brokenSet, hideBroken, customEnriched]);
+    // Order: user's own custom channels first, then admin broadcast, then catalog
+    return [...customEnriched, ...broadcastEnriched, ...result];
+  }, [
+    channels,
+    streams,
+    streamMap,
+    countryMap,
+    logoMap,
+    brokenSet,
+    hideBroken,
+    customEnriched,
+    broadcastEnriched,
+  ]);
 
   // Store all channels for player navigation
   useEffect(() => {

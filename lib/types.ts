@@ -85,3 +85,14 @@ export interface CustomChannel {
   category: string | null;
   addedAt: number;
 }
+
+export interface BroadcastChannel {
+  id: string;
+  name: string;
+  url: string;
+  logo: string | null;
+  category: string | null;
+  country: string | null;
+  description: string | null;
+  addedAt: number;
+}
