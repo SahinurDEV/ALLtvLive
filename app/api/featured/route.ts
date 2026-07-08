@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, FEATURED_COLLECTION, FEATURED_DOC_ID } from "@/lib/db/mongo";
 import { isAuthenticated } from "@/lib/admin/auth";
+import { logAudit } from "@/lib/admin/audit";
 import {
   FEATURED_CHANNEL_IDS,
   PRIMARY_CHANNEL_ID,
@@ -97,6 +98,7 @@ export async function PUT(req: Request) {
       { $set: { ids: cleaned, primary, updatedAt: Date.now() } },
       { upsert: true }
     );
+    await logAudit(req, "featured.update", { count: cleaned.length, primary });
     return NextResponse.json({ ok: true, count: cleaned.length, primary });
   } catch (err) {
     // eslint-disable-next-line no-console

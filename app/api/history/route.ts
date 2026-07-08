@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getDb, HISTORY_COLLECTION } from "@/lib/db/mongo";
 import { isAuthenticated } from "@/lib/admin/auth";
+import { extractIp } from "@/lib/admin/ipUtils";
+import { checkRateLimit } from "@/lib/admin/rateLimit";
+import { logAudit } from "@/lib/admin/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,23 +29,19 @@ function clip(v: unknown, max: number): string | null {
   return s.slice(0, max);
 }
 
-function extractIp(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  const real = req.headers.get("x-real-ip");
-  if (real) return real.trim();
-  const vercel = req.headers.get("x-vercel-forwarded-for");
-  if (vercel) {
-    const first = vercel.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  return "unknown";
-}
-
 export async function POST(req: Request) {
+  const ip = extractIp(req);
+  const rl = await checkRateLimit(`history:${ip}`, 60, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "rate_limited" },
+      {
+        status: 429,
+        headers: { "retry-after": Math.ceil(rl.retryAfter / 1000).toString() },
+      }
+    );
+  }
+
   let body: {
     channelId?: unknown;
     channelName?: unknown;
@@ -65,7 +64,7 @@ export async function POST(req: Request) {
   }
 
   const doc: HistoryDoc = {
-    ip: extractIp(req),
+    ip,
     channelId,
     channelName,
     country: clip(body.country, MAX_TEXT_LEN),
@@ -246,6 +245,7 @@ export async function DELETE(req: Request) {
       );
     }
     const result = await col.deleteMany(query);
+    await logAudit(req, "history.delete", { query, deleted: result.deletedCount });
     return NextResponse.json({ ok: true, deleted: result.deletedCount });
   } catch (err) {
     // eslint-disable-next-line no-console

@@ -5,6 +5,7 @@ import {
   BROADCAST_DOC_ID,
 } from "@/lib/db/mongo";
 import { isAuthenticated } from "@/lib/admin/auth";
+import { logAudit } from "@/lib/admin/audit";
 import type { BroadcastChannel } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -137,6 +138,7 @@ export async function PUT(req: Request) {
       { $set: { channels: deduped, updatedAt: Date.now() } },
       { upsert: true }
     );
+    await logAudit(req, "broadcast.update", { count: deduped.length });
     return NextResponse.json({ ok: true, count: deduped.length });
   } catch (err) {
     // eslint-disable-next-line no-console
