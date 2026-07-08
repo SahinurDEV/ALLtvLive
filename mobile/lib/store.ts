@@ -10,6 +10,15 @@ interface State {
   channels: ChannelWithMeta[];
   setChannels: (c: ChannelWithMeta[]) => void;
 
+  // Admin-managed featured list from web app
+  featuredIds: string[];
+  primaryId: string | null;
+  setFeatured: (info: { ids: string[]; primary: string | null }) => void;
+
+  // Whether we've already auto-played on this app launch
+  autoPlayed: boolean;
+  markAutoPlayed: () => void;
+
   favorites: string[];
   toggleFavorite: (id: string) => Promise<void>;
 
@@ -46,6 +55,14 @@ async function saveJSON<T>(key: string, value: T) {
 export const useStore = create<State>((set, get) => ({
   channels: [],
   setChannels: (channels) => set({ channels }),
+
+  featuredIds: [],
+  primaryId: null,
+  setFeatured: ({ ids, primary }) =>
+    set({ featuredIds: ids, primaryId: primary }),
+
+  autoPlayed: false,
+  markAutoPlayed: () => set({ autoPlayed: true }),
 
   favorites: [],
   toggleFavorite: async (id) => {

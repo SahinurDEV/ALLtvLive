@@ -1,9 +1,11 @@
 "use client";
 
-import { Shuffle, Menu, Tv, Settings } from "lucide-react";
+import { Shuffle, Menu, Tv, Settings, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "./SearchBar";
 import { useAppStore } from "@/lib/store";
+import { useFeatured } from "@/hooks/useFeatured";
+import { useMemo } from "react";
 
 export function Navbar() {
   const setSidebarOpen = useAppStore((s) => s.setSidebarOpen);
@@ -11,10 +13,25 @@ export function Navbar() {
   const allChannels = useAppStore((s) => s.allChannels);
   const openPlayer = useAppStore((s) => s.openPlayer);
   const userCountry = useAppStore((s) => s.userCountry);
+  const { ids: featuredIds, primary: primaryId } = useFeatured();
+
+  const featuredChannels = useMemo(
+    () =>
+      featuredIds
+        .map((id) => allChannels.find((c) => c.id === id))
+        .filter((c): c is NonNullable<(typeof allChannels)[number]> => !!c),
+    [featuredIds, allChannels]
+  );
+
+  const primaryChannel = useMemo(
+    () => (primaryId ? allChannels.find((c) => c.id === primaryId) ?? null : null),
+    [primaryId, allChannels]
+  );
+
+  const hasFeatured = featuredChannels.length > 0 || !!primaryChannel;
 
   const handleRandomChannel = () => {
     if (allChannels.length === 0) return;
-    // Prefer user's country if we know it
     const pool = userCountry
       ? allChannels.filter(
           (ch) => ch.country.toUpperCase() === userCountry.toUpperCase()
@@ -23,6 +40,18 @@ export function Navbar() {
     const source = pool.length >= 5 ? pool : allChannels;
     const random = source[Math.floor(Math.random() * source.length)];
     openPlayer(random);
+  };
+
+  const handleFeaturedChannel = () => {
+    // Primary wins if set; else pick a random featured channel
+    if (primaryChannel) {
+      openPlayer(primaryChannel);
+      return;
+    }
+    if (featuredChannels.length === 0) return;
+    const pick =
+      featuredChannels[Math.floor(Math.random() * featuredChannels.length)];
+    openPlayer(pick);
   };
 
   return (
@@ -54,6 +83,35 @@ export function Navbar() {
 
         {/* Right: actions */}
         <div className="flex items-center gap-1 sm:gap-2">
+          {hasFeatured && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleFeaturedChannel}
+                className="gap-1.5 hidden sm:flex border-neon/40 hover:border-neon hover:bg-neon/10 hover:text-neon"
+                aria-label="Play a featured channel"
+                title={
+                  primaryChannel
+                    ? `Play featured: ${primaryChannel.name}`
+                    : "Play a random featured channel"
+                }
+              >
+                <Sparkles className="h-4 w-4 text-neon" />
+                Featured
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleFeaturedChannel}
+                className="sm:hidden border-neon/40 hover:border-neon hover:bg-neon/10 hover:text-neon"
+                aria-label="Play a featured channel"
+              >
+                <Sparkles className="h-4 w-4 text-neon" />
+              </Button>
+            </>
+          )}
+
           <Button
             variant="neon"
             size="sm"

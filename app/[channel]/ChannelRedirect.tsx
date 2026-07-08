@@ -18,7 +18,7 @@ export function ChannelRedirect({ channelId }: { channelId: string }) {
     if (channel) {
       openPlayer(channel);
     }
-    router.replace("/");
+    router.replace("/watch");
   }, [channelId, allChannels, isLoading, openPlayer, router]);
 
   return (

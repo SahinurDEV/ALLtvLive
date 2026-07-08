@@ -1,4 +1,5 @@
 import type { Channel, Stream, Country, ChannelWithMeta } from "./types";
+import { WEB_API_BASE_URL } from "./config";
 
 const BASE_URL = "https://iptv-org.github.io/api";
 
@@ -64,4 +65,84 @@ export function pickBestStream(streams: Stream[]): string | null {
   if (streams.length === 0) return null;
   const hls = streams.find((s) => s.url.includes(".m3u8"));
   return (hls || streams[0]).url;
+}
+
+export interface FeaturedInfo {
+  ids: string[];
+  primary: string | null;
+}
+
+// Fetches the admin-managed featured list + primary from the web app.
+// Falls back to an empty list on any error — caller decides how to handle.
+export async function loadFeatured(): Promise<FeaturedInfo> {
+  try {
+    const res = await fetch(`${WEB_API_BASE_URL}/api/featured`, {
+      headers: { accept: "application/json" },
+    });
+    if (!res.ok) throw new Error(`featured ${res.status}`);
+    const data = (await res.json()) as {
+      ids?: string[];
+      primary?: string | null;
+    };
+    return {
+      ids: Array.isArray(data.ids) ? data.ids : [],
+      primary: typeof data.primary === "string" ? data.primary : null,
+    };
+  } catch {
+    return { ids: [], primary: null };
+  }
+}
+
+export interface BroadcastRawChannel {
+  id: string;
+  name: string;
+  url: string;
+  logo: string | null;
+  category: string | null;
+  country: string | null;
+  description: string | null;
+  addedAt: number;
+}
+
+// Fetches admin-managed broadcast channels (custom channels visible to
+// every user). Falls back to an empty array on any error.
+export async function loadBroadcastChannels(): Promise<BroadcastRawChannel[]> {
+  try {
+    const res = await fetch(`${WEB_API_BASE_URL}/api/broadcast-channels`, {
+      headers: { accept: "application/json" },
+    });
+    if (!res.ok) throw new Error(`broadcast ${res.status}`);
+    const data = (await res.json()) as { channels?: BroadcastRawChannel[] };
+    return Array.isArray(data.channels) ? data.channels : [];
+  } catch {
+    return [];
+  }
+}
+
+export function broadcastToChannelWithMeta(
+  c: BroadcastRawChannel
+): ChannelWithMeta {
+  return {
+    id: c.id,
+    name: c.name,
+    alt_names: [],
+    network: null,
+    owners: [],
+    country: c.country || "INT",
+    languages: [],
+    categories: c.category ? [c.category] : [],
+    is_nsfw: false,
+    logo: c.logo,
+    streams: [
+      {
+        channel: c.id,
+        feed: null,
+        title: c.name,
+        url: c.url,
+        quality: null,
+        user_agent: null,
+        referrer: null,
+      },
+    ],
+  };
 }

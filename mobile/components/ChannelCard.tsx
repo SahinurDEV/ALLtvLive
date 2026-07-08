@@ -6,21 +6,31 @@ import { theme } from "@/lib/theme";
 interface Props {
   channel: ChannelWithMeta;
   broken?: boolean;
+  primary?: boolean;
 }
 
-export function ChannelCard({ channel, broken }: Props) {
+export function ChannelCard({ channel, broken, primary }: Props) {
   const router = useRouter();
 
   return (
     <Pressable
       onPress={() => router.push(`/channel/${encodeURIComponent(channel.id)}`)}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.card,
+        primary && styles.cardPrimary,
+        pressed && styles.pressed,
+      ]}
     >
       <View style={styles.logoWrap}>
         {channel.logo ? (
           <Image source={{ uri: channel.logo }} style={styles.logo} resizeMode="contain" />
         ) : (
           <Text style={styles.placeholder}>{channel.name.slice(0, 2).toUpperCase()}</Text>
+        )}
+        {primary && (
+          <View style={styles.primaryBadge}>
+            <Text style={styles.primaryBadgeText}>★ 1ST</Text>
+          </View>
         )}
         {broken && (
           <View style={styles.brokenBadge}>
@@ -48,6 +58,26 @@ const styles = StyleSheet.create({
     backgroundColor: theme.card,
     borderWidth: 1,
     borderColor: theme.cardBorder,
+  },
+  cardPrimary: {
+    borderColor: "#facc1588",
+    backgroundColor: "#1a1608",
+  },
+  primaryBadge: {
+    position: "absolute",
+    top: 6,
+    left: 6,
+    backgroundColor: "#facc15",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    zIndex: 2,
+  },
+  primaryBadgeText: {
+    color: "#000",
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0.5,
   },
   pressed: {
     opacity: 0.7,

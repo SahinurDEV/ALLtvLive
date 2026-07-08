@@ -24,7 +24,9 @@ interface UseUniversalPlayerResult {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   phase: PlayerPhase;
   activeSource: ResolvedSource | null;
+  sources: ResolvedSource[];
   sourceIndex: number;
+  setSource: (idx: number) => void;
   totalSources: number;
   isYouTube: boolean;
   youtubeEmbedUrl: string | null;
@@ -293,11 +295,24 @@ export function useUniversalPlayer({
     advanceSource();
   }, [advanceSource]);
 
+  const setSource = useCallback(
+    (idx: number) => {
+      if (idx < 0 || idx >= sources.length) return;
+      attemptsRef.current = 0;
+      setErrorMessage(null);
+      setPhase("loading");
+      setSourceIndex(idx);
+    },
+    [sources.length]
+  );
+
   return {
     videoRef,
     phase,
     activeSource,
+    sources,
     sourceIndex,
+    setSource,
     totalSources: sources.length,
     isYouTube,
     youtubeEmbedUrl,

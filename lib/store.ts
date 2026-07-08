@@ -98,6 +98,11 @@ interface AppState {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
 
+  // Theater / cinema mode — hides sidebar & content around player
+  theaterMode: boolean;
+  setTheaterMode: (open: boolean) => void;
+  toggleTheaterMode: () => void;
+
   // Settings sheet
   settingsOpen: boolean;
   setSettingsOpen: (open: boolean) => void;
@@ -228,6 +233,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Sidebar
   sidebarOpen: false,
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
+
+  // Theater mode
+  theaterMode: false,
+  setTheaterMode: (open) => set({ theaterMode: open }),
+  toggleTheaterMode: () => set((state) => ({ theaterMode: !state.theaterMode })),
 
   // Settings sheet
   settingsOpen: false,
