@@ -116,7 +116,7 @@ export function useUniversalPlayer({
         setPhase("error");
         setErrorMessage("No working streams available for this channel.");
         if (channel) {
-          reportPlaybackResult(channel.id, false);
+          reportPlaybackResult(channel.id, false, channel.name);
           onFatalError?.(channel.id);
         }
         return idx;
@@ -158,7 +158,7 @@ export function useUniversalPlayer({
       clearTimers();
       teardownHls();
       setPhase("playing");
-      reportPlaybackResult(channel.id, true);
+      reportPlaybackResult(channel.id, true, channel.name);
       return;
     }
 
@@ -175,7 +175,7 @@ export function useUniversalPlayer({
     const bumpToPlaying = () => {
       clearTimers();
       setPhase("playing");
-      reportPlaybackResult(channel.id, true);
+      reportPlaybackResult(channel.id, true, channel.name);
     };
 
     const onLoadedData = () => bumpToPlaying();
