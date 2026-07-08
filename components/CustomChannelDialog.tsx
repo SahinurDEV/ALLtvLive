@@ -186,25 +186,25 @@ export function CustomChannelDialog() {
   return (
     <AnimatePresence>
       {open && (
-        <>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={close}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 12 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.18 }}
-            className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-xl max-h-[calc(100vh-2rem)] flex flex-col"
+            className="relative w-full max-w-xl max-h-[calc(100vh-1rem)] sm:max-h-[calc(100vh-2rem)] flex flex-col"
             role="dialog"
             aria-modal="true"
             aria-labelledby="my-channels-title"
           >
-            <div className="bg-card border border-neon/20 rounded-2xl shadow-[0_10px_60px_rgba(0,255,157,0.15)] overflow-hidden flex flex-col">
+            <div className="bg-card border border-neon/20 rounded-2xl shadow-[0_10px_60px_rgba(0,255,157,0.15)] overflow-hidden flex flex-col max-h-full">
               {/* Header */}
               <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border/60 bg-gradient-to-br from-neon/5 to-transparent">
                 <div className="flex items-center gap-3 min-w-0">
@@ -477,7 +477,7 @@ export function CustomChannelDialog() {
               </div>
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );

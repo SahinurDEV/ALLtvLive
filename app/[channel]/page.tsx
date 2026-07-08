@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ChannelRedirect } from "./ChannelRedirect";
+import { WatchApp } from "@/components/WatchApp";
 
 interface Props {
   params: Promise<{ channel: string }>;
@@ -78,5 +78,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ChannelPage({ params }: Props) {
   const { channel } = await params;
-  return <ChannelRedirect channelId={channel} />;
+  return <WatchApp initialChannelId={channel} />;
 }

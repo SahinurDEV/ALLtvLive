@@ -61,6 +61,42 @@ export function useUniversalPlayer({
   const [phase, setPhase] = useState<PlayerPhase>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // One-shot listener that resumes playback with sound as soon as the user
+  // interacts with the page — used only when the browser blocks sound autoplay.
+  const gestureCleanupRef = useRef<(() => void) | null>(null);
+
+  const clearGestureListener = useCallback(() => {
+    if (gestureCleanupRef.current) {
+      gestureCleanupRef.current();
+      gestureCleanupRef.current = null;
+    }
+  }, []);
+
+  const attemptAutoplay = useCallback((video: HTMLVideoElement) => {
+    video.play().catch(() => {
+      // Browser blocked autoplay with sound. Don't mute — instead, arm a
+      // one-shot listener that resumes playback the moment the user touches
+      // the page. Video stays paused with the play button visible until then.
+      setPhase("paused");
+      clearGestureListener();
+      const resume = () => {
+        clearGestureListener();
+        video.play().catch(() => {
+          // Even with a gesture play failed — leave paused for manual retry
+        });
+      };
+      const opts = { once: true, capture: true } as const;
+      document.addEventListener("pointerdown", resume, opts);
+      document.addEventListener("keydown", resume, opts);
+      document.addEventListener("touchstart", resume, opts);
+      gestureCleanupRef.current = () => {
+        document.removeEventListener("pointerdown", resume, opts);
+        document.removeEventListener("keydown", resume, opts);
+        document.removeEventListener("touchstart", resume, opts);
+      };
+    });
+  }, [clearGestureListener]);
+
   const activeSource = sources[sourceIndex] || null;
   const isYouTube = activeSource?.type === "youtube";
   const youtubeEmbedUrl = useMemo(() => {
@@ -105,8 +141,11 @@ export function useUniversalPlayer({
       attemptsRef.current = 0;
       setPhase(channel ? "loading" : "idle");
       setErrorMessage(null);
+      clearGestureListener();
     }
-  }, [channel]);
+  }, [channel, clearGestureListener]);
+
+  useEffect(() => clearGestureListener, [clearGestureListener]);
 
   const advanceSource = useCallback(() => {
     attemptsRef.current = 0;
@@ -217,10 +256,7 @@ export function useUniversalPlayer({
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           if (autoplay) {
-            video.play().catch(() => {
-              // Autoplay might be blocked; UI will show paused
-              setPhase("paused");
-            });
+            attemptAutoplay(video);
           }
         });
 
@@ -238,7 +274,7 @@ export function useUniversalPlayer({
         video.src = url;
         video.load();
         if (autoplay) {
-          video.play().catch(() => setPhase("paused"));
+          attemptAutoplay(video);
         }
       } catch {
         handleSourceFailure("native src threw");
