@@ -46,6 +46,7 @@ import { getPlaceholderLogo, formatViewerCount } from "@/lib/utils";
 import { useUniversalPlayer } from "@/lib/player/useUniversalPlayer";
 import { PlayerShell } from "@/components/player/PlayerShell";
 import { logViewEvent } from "@/lib/history/viewLogger";
+import { RatingButtons } from "@/components/RatingButtons";
 import { toast } from "sonner";
 
 const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
@@ -1177,6 +1178,11 @@ export function InlinePlayer() {
               <Share2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
               Share
             </Button>
+            <RatingButtons
+              channelId={currentChannel.id}
+              channelName={currentChannel.name}
+              compact
+            />
             <Button
               variant="secondary"
               size="sm"

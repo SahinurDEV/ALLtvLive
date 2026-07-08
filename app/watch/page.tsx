@@ -10,6 +10,7 @@ import { FavoritesView } from "@/components/FavoritesView";
 import { CustomChannelDialog } from "@/components/CustomChannelDialog";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { ContinueWatchingRow } from "@/components/home/ContinueWatchingRow";
+import { ForYouRow } from "@/components/home/ForYouRow";
 import { TrendingRow } from "@/components/home/TrendingRow";
 import { QuickFilterChips } from "@/components/home/QuickFilterChips";
 import { FeaturedRow } from "@/components/home/FeaturedRow";
@@ -344,6 +345,8 @@ export default function WatchPage() {
                   <>
                     <ContinueWatchingRow allChannels={allChannels} />
 
+                    <ForYouRow allChannels={allChannels} />
+
                     <FeaturedRow channels={featuredChannels} />
 
                     <DiscoverCategoryTiles allChannels={allChannels} />
@@ -423,6 +426,10 @@ export default function WatchPage() {
                     <span className="mx-2">·</span>
                     <a href="/about" className="hover:text-neon transition-colors">
                       About &amp; Disclaimer
+                    </a>
+                    <span className="mx-2">·</span>
+                    <a href="/public-api" className="hover:text-neon transition-colors">
+                      Public API
                     </a>
                     <span className="mx-2">·</span>
                     <a
