@@ -40,3 +40,9 @@ export const BROADCAST_COLLECTION = "broadcastChannels";
 export const BROADCAST_DOC_ID = "current";
 
 export const HISTORY_COLLECTION = "viewHistory";
+export const IP_GEO_COLLECTION = "ipGeo";
+export const STREAM_HEALTH_COLLECTION = "streamHealth";
+export const AUDIT_LOG_COLLECTION = "auditLog";
+export const RATINGS_COLLECTION = "ratings";
+export const REPORTS_COLLECTION = "reports";
+export const RATE_LIMIT_COLLECTION = "rateLimits";

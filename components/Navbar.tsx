@@ -43,12 +43,11 @@ export function Navbar() {
   };
 
   const handleFeaturedChannel = () => {
-    // Primary wins if set; else pick a random featured channel
-    if (primaryChannel) {
-      openPlayer(primaryChannel);
+    // Always pick a random channel from the 24/7 Live list
+    if (featuredChannels.length === 0) {
+      if (primaryChannel) openPlayer(primaryChannel);
       return;
     }
-    if (featuredChannels.length === 0) return;
     const pick =
       featuredChannels[Math.floor(Math.random() * featuredChannels.length)];
     openPlayer(pick);
@@ -90,22 +89,18 @@ export function Navbar() {
                 size="sm"
                 onClick={handleFeaturedChannel}
                 className="gap-1.5 hidden sm:flex border-neon/40 hover:border-neon hover:bg-neon/10 hover:text-neon"
-                aria-label="Play a featured channel"
-                title={
-                  primaryChannel
-                    ? `Play featured: ${primaryChannel.name}`
-                    : "Play a random featured channel"
-                }
+                aria-label="Play a 24/7 live channel"
+                title="Play a random 24/7 Live channel"
               >
                 <Sparkles className="h-4 w-4 text-neon" />
-                Featured
+                24/7 Live
               </Button>
               <Button
                 variant="outline"
                 size="icon"
                 onClick={handleFeaturedChannel}
                 className="sm:hidden border-neon/40 hover:border-neon hover:bg-neon/10 hover:text-neon"
-                aria-label="Play a featured channel"
+                aria-label="Play a 24/7 live channel"
               >
                 <Sparkles className="h-4 w-4 text-neon" />
               </Button>

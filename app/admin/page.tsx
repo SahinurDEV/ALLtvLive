@@ -27,16 +27,34 @@ import {
   Menu,
   ArrowRight,
   Activity,
+  BarChart3,
+  HeartPulse,
+  ScrollText,
+  Flag,
 } from "lucide-react";
 import { useChannels } from "@/hooks/useChannels";
 import { Button } from "@/components/ui/button";
 import { AdminMiniPlayer } from "@/components/admin/AdminMiniPlayer";
 import { AdminBroadcastPanel } from "@/components/admin/AdminBroadcastPanel";
 import { AdminHistoryPanel } from "@/components/admin/AdminHistoryPanel";
+import { AdminAnalyticsPanel } from "@/components/admin/AdminAnalyticsPanel";
+import { AdminHealthPanel } from "@/components/admin/AdminHealthPanel";
+import { AdminAuditPanel } from "@/components/admin/AdminAuditPanel";
+import { AdminReportsPanel } from "@/components/admin/AdminReportsPanel";
+import { AdminRatingsPanel } from "@/components/admin/AdminRatingsPanel";
 import { toast } from "sonner";
 import type { BroadcastChannel, ChannelWithMeta, Country } from "@/lib/types";
 
-type AdminSection = "overview" | "featured" | "broadcast" | "history";
+type AdminSection =
+  | "overview"
+  | "featured"
+  | "broadcast"
+  | "history"
+  | "analytics"
+  | "health"
+  | "audit"
+  | "reports"
+  | "ratings";
 
 export default function AdminPage() {
   const [authState, setAuthState] = useState<"checking" | "signed-out" | "signed-in">(
@@ -469,6 +487,16 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             )}
 
             {section === "history" && <AdminHistoryPanel />}
+
+            {section === "analytics" && <AdminAnalyticsPanel />}
+
+            {section === "health" && <AdminHealthPanel />}
+
+            {section === "audit" && <AdminAuditPanel />}
+
+            {section === "reports" && <AdminReportsPanel />}
+
+            {section === "ratings" && <AdminRatingsPanel />}
           </div>
         </main>
       </div>
@@ -541,6 +569,36 @@ function AdminSidebar({
       label: "History",
       hint: "IP-level viewing logs",
       icon: <Activity className="h-4 w-4" />,
+    },
+    {
+      id: "analytics",
+      label: "Analytics",
+      hint: "Peak times & geography",
+      icon: <BarChart3 className="h-4 w-4" />,
+    },
+    {
+      id: "health",
+      label: "Stream health",
+      hint: "Playback success across users",
+      icon: <HeartPulse className="h-4 w-4" />,
+    },
+    {
+      id: "reports",
+      label: "Reports",
+      hint: "User-flagged issues",
+      icon: <Flag className="h-4 w-4" />,
+    },
+    {
+      id: "ratings",
+      label: "Ratings",
+      hint: "Channel up/down votes",
+      icon: <Star className="h-4 w-4" />,
+    },
+    {
+      id: "audit",
+      label: "Audit log",
+      hint: "Admin mutations tracked",
+      icon: <ScrollText className="h-4 w-4" />,
     },
   ];
 
@@ -686,6 +744,26 @@ function AdminTopBar({
     history: {
       title: "Viewing history",
       subtitle: "Every play is recorded with IP and channel.",
+    },
+    analytics: {
+      title: "Analytics",
+      subtitle: "Peak-time heatmap and viewer geography.",
+    },
+    health: {
+      title: "Stream health",
+      subtitle: "Success and failure rates aggregated from every viewer.",
+    },
+    audit: {
+      title: "Audit log",
+      subtitle: "Every admin mutation, tagged by IP and action.",
+    },
+    reports: {
+      title: "User reports",
+      subtitle: "Broken-stream and content flags from your viewers.",
+    },
+    ratings: {
+      title: "Channel ratings",
+      subtitle: "Community up/down votes on each channel.",
     },
   };
 

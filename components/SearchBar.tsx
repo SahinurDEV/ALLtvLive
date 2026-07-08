@@ -2,12 +2,13 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { Search, X, Radio, CornerDownLeft } from "lucide-react";
+import { Search, X, Radio, CornerDownLeft, Clock, Flame } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAppStore } from "@/lib/store";
 import type { ChannelWithMeta } from "@/lib/types";
 
 const MAX_RESULTS = 8;
+const MAX_SUGGESTIONS = 6;
 
 function scoreMatch(query: string, ch: ChannelWithMeta): number {
   const q = query.toLowerCase();
@@ -23,10 +24,24 @@ function scoreMatch(query: string, ch: ChannelWithMeta): number {
   return -1;
 }
 
+function formatViewers(count: number): string | null {
+  if (!count || count < 10) return null;
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
+  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}k`;
+  return String(count);
+}
+
+interface Section {
+  label: string;
+  icon: typeof Clock;
+  items: ChannelWithMeta[];
+}
+
 export function SearchBar() {
   const setSearch = useAppStore((s) => s.setSearch);
   const searchValue = useAppStore((s) => s.filters.search);
   const allChannels = useAppStore((s) => s.allChannels);
+  const historyIds = useAppStore((s) => s.historyIds);
   const openPlayer = useAppStore((s) => s.openPlayer);
 
   const [localValue, setLocalValue] = useState(searchValue);
@@ -40,7 +55,7 @@ export function SearchBar() {
   const trimmed = localValue.trim();
 
   const results = useMemo<ChannelWithMeta[]>(() => {
-    if (!trimmed || trimmed.length < 1) return [];
+    if (!trimmed) return [];
     const scored: Array<{ ch: ChannelWithMeta; s: number }> = [];
     for (const ch of allChannels) {
       const s = scoreMatch(trimmed, ch);
@@ -50,9 +65,38 @@ export function SearchBar() {
     return scored.slice(0, MAX_RESULTS).map((x) => x.ch);
   }, [trimmed, allChannels]);
 
+  const suggestions = useMemo<Section[]>(() => {
+    if (trimmed) return [];
+    if (allChannels.length === 0) return [];
+
+    const byId = new Map(allChannels.map((c) => [c.id, c]));
+
+    const recent = historyIds
+      .map((id) => byId.get(id))
+      .filter((c): c is ChannelWithMeta => !!c)
+      .slice(0, MAX_SUGGESTIONS);
+
+    const recentSet = new Set(recent.map((c) => c.id));
+    const trending = [...allChannels]
+      .filter((c) => !recentSet.has(c.id))
+      .sort((a, b) => b.viewerCount - a.viewerCount)
+      .slice(0, MAX_SUGGESTIONS);
+
+    const sections: Section[] = [];
+    if (recent.length > 0) sections.push({ label: "Recently watched", icon: Clock, items: recent });
+    if (trending.length > 0) sections.push({ label: "Trending now", icon: Flame, items: trending });
+    return sections;
+  }, [trimmed, allChannels, historyIds]);
+
+  // Flat list of items in visible order — used for keyboard navigation
+  const navItems = useMemo(() => {
+    if (results.length > 0) return results;
+    return suggestions.flatMap((s) => s.items);
+  }, [results, suggestions]);
+
   useEffect(() => {
     setHighlightIdx(0);
-  }, [trimmed]);
+  }, [trimmed, dropdownOpen]);
 
   const handleChange = useCallback(
     (value: string) => {
@@ -69,17 +113,19 @@ export function SearchBar() {
   const handleClear = useCallback(() => {
     setLocalValue("");
     setSearch("");
-    setDropdownOpen(false);
+    setDropdownOpen(true);
     inputRef.current?.focus();
   }, [setSearch]);
 
   const handleSelect = useCallback(
     (ch: ChannelWithMeta) => {
       openPlayer(ch);
+      setLocalValue("");
+      setSearch("");
       setDropdownOpen(false);
       inputRef.current?.blur();
     },
-    [openPlayer]
+    [openPlayer, setSearch]
   );
 
   // Ctrl+K / Cmd+K to focus
@@ -119,22 +165,23 @@ export function SearchBar() {
       }
       return;
     }
-    if (!dropdownOpen || results.length === 0) return;
+    if (!dropdownOpen || navItems.length === 0) return;
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setHighlightIdx((i) => (i + 1) % results.length);
+      setHighlightIdx((i) => (i + 1) % navItems.length);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setHighlightIdx((i) => (i - 1 + results.length) % results.length);
+      setHighlightIdx((i) => (i - 1 + navItems.length) % navItems.length);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      const pick = results[highlightIdx] || results[0];
+      const pick = navItems[highlightIdx] || navItems[0];
       if (pick) handleSelect(pick);
     }
   };
 
-  const showDropdown = dropdownOpen && trimmed.length > 0;
+  const showDropdown = dropdownOpen;
+  const searching = trimmed.length > 0;
 
   return (
     <div ref={containerRef} className="relative flex items-center w-full max-w-md">
@@ -145,9 +192,7 @@ export function SearchBar() {
         placeholder="Search channels... (Ctrl+K)"
         value={localValue}
         onChange={(e) => handleChange(e.target.value)}
-        onFocus={() => {
-          if (trimmed.length > 0) setDropdownOpen(true);
-        }}
+        onFocus={() => setDropdownOpen(true)}
         onKeyDown={handleKeyDown}
         className="pl-9 pr-9 bg-secondary/50 border-border/50 focus:border-neon/50 focus:ring-neon/20"
         aria-label="Search channels"
@@ -170,7 +215,7 @@ export function SearchBar() {
           role="listbox"
           className="absolute top-full left-0 right-0 mt-2 rounded-xl border border-border/70 bg-popover/95 backdrop-blur-xl shadow-2xl overflow-hidden z-50 animate-in fade-in-0 zoom-in-95 duration-150"
         >
-          {results.length === 0 ? (
+          {searching && results.length === 0 ? (
             <div className="p-4 text-center">
               <p className="text-sm text-muted-foreground">
                 No channels match{" "}
@@ -182,66 +227,45 @@ export function SearchBar() {
                 Try a shorter query or a country name.
               </p>
             </div>
+          ) : !searching && suggestions.length === 0 ? (
+            <div className="p-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                Start typing to search{" "}
+                <span className="text-foreground font-medium">
+                  {allChannels.length.toLocaleString()}
+                </span>{" "}
+                channels
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Search by name, country, or category.
+              </p>
+            </div>
           ) : (
             <>
-              <div className="max-h-80 overflow-y-auto">
-                {results.map((ch, idx) => {
-                  const highlighted = idx === highlightIdx;
-                  return (
-                    <button
-                      key={ch.id}
-                      type="button"
-                      role="option"
-                      aria-selected={highlighted}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onMouseEnter={() => setHighlightIdx(idx)}
-                      onClick={() => handleSelect(ch)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
-                        highlighted
-                          ? "bg-neon/10"
-                          : "hover:bg-secondary/60"
-                      }`}
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-black/40 border border-border/60 flex items-center justify-center relative overflow-hidden shrink-0">
-                        {ch.logo ? (
-                          <Image
-                            src={ch.logo}
-                            alt=""
-                            fill
-                            sizes="40px"
-                            className="object-contain p-1"
-                            unoptimized
-                          />
-                        ) : (
-                          <Radio className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className={`text-sm font-medium truncate ${
-                            highlighted ? "text-neon" : "text-foreground"
-                          }`}
-                        >
-                          {ch.name}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground truncate">
-                          {ch.countryInfo?.flag} {ch.countryInfo?.name}
-                          {ch.categories.length > 0 && (
-                            <>
-                              {" · "}
-                              {ch.categories.slice(0, 2).join(", ")}
-                            </>
+              <div className="max-h-96 overflow-y-auto">
+                {searching
+                  ? renderRows(results, 0, highlightIdx, setHighlightIdx, handleSelect)
+                  : suggestions.map((section, sIdx) => {
+                      const offset = suggestions
+                        .slice(0, sIdx)
+                        .reduce((sum, s) => sum + s.items.length, 0);
+                      const Icon = section.icon;
+                      return (
+                        <div key={section.label}>
+                          <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+                            <Icon className="h-3 w-3 text-neon" />
+                            {section.label}
+                          </div>
+                          {renderRows(
+                            section.items,
+                            offset,
+                            highlightIdx,
+                            setHighlightIdx,
+                            handleSelect
                           )}
-                        </p>
-                      </div>
-
-                      {highlighted && (
-                        <CornerDownLeft className="h-3.5 w-3.5 text-neon shrink-0" />
-                      )}
-                    </button>
-                  );
-                })}
+                        </div>
+                      );
+                    })}
               </div>
 
               <div className="flex items-center justify-between px-3 py-2 border-t border-border/60 bg-background/40 text-[10px] text-muted-foreground">
@@ -259,9 +283,11 @@ export function SearchBar() {
                   </kbd>
                   close
                 </div>
-                <span>
-                  {results.length} match{results.length === 1 ? "" : "es"}
-                </span>
+                {searching && (
+                  <span>
+                    {results.length} match{results.length === 1 ? "" : "es"}
+                  </span>
+                )}
               </div>
             </>
           )}
@@ -269,4 +295,76 @@ export function SearchBar() {
       )}
     </div>
   );
+}
+
+function renderRows(
+  items: ChannelWithMeta[],
+  offset: number,
+  highlightIdx: number,
+  setHighlightIdx: (i: number) => void,
+  handleSelect: (ch: ChannelWithMeta) => void
+) {
+  return items.map((ch, i) => {
+    const idx = offset + i;
+    const highlighted = idx === highlightIdx;
+    const viewers = formatViewers(ch.viewerCount);
+    return (
+      <button
+        key={ch.id}
+        type="button"
+        role="option"
+        aria-selected={highlighted}
+        onMouseDown={(e) => e.preventDefault()}
+        onMouseEnter={() => setHighlightIdx(idx)}
+        onClick={() => handleSelect(ch)}
+        className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+          highlighted ? "bg-neon/10" : "hover:bg-secondary/60"
+        }`}
+      >
+        <div className="w-10 h-10 rounded-lg bg-black/40 border border-border/60 flex items-center justify-center relative overflow-hidden shrink-0">
+          {ch.logo ? (
+            <Image
+              src={ch.logo}
+              alt=""
+              fill
+              sizes="40px"
+              className="object-contain p-1"
+              unoptimized
+            />
+          ) : (
+            <Radio className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p
+            className={`text-sm font-medium truncate ${
+              highlighted ? "text-neon" : "text-foreground"
+            }`}
+          >
+            {ch.name}
+          </p>
+          <p className="text-[11px] text-muted-foreground truncate">
+            {ch.countryInfo?.flag} {ch.countryInfo?.name}
+            {ch.categories.length > 0 && (
+              <>
+                {" · "}
+                {ch.categories.slice(0, 2).join(", ")}
+              </>
+            )}
+          </p>
+        </div>
+
+        {viewers && (
+          <span className="text-[10px] font-mono text-muted-foreground shrink-0 hidden sm:inline">
+            {viewers}
+          </span>
+        )}
+
+        {highlighted && (
+          <CornerDownLeft className="h-3.5 w-3.5 text-neon shrink-0" />
+        )}
+      </button>
+    );
+  });
 }

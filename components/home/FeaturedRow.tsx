@@ -1,6 +1,5 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
 import { ChannelScrollRow } from "./ChannelScrollRow";
 import type { ChannelWithMeta } from "@/lib/types";
 
@@ -14,8 +13,13 @@ export function FeaturedRow({ channels }: Props) {
   return (
     <ChannelScrollRow
       channels={channels}
-      title="Featured"
-      icon={<Sparkles className="h-5 w-5 text-neon" />}
+      title="24/7 Live"
+      icon={
+        <span className="relative inline-flex h-2.5 w-2.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+        </span>
+      }
     />
   );
 }

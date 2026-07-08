@@ -77,9 +77,9 @@ export function WatchHeroBar({
   }, [now]);
 
   const primaryLabel = primaryChannel
-    ? `Featured pick: ${primaryChannel.name}`
+    ? `24/7 Live pick: ${primaryChannel.name}`
     : featuredCount > 0
-      ? `${featuredCount} curated featured channel${featuredCount === 1 ? "" : "s"}`
+      ? `${featuredCount} curated 24/7 Live channel${featuredCount === 1 ? "" : "s"}`
       : null;
 
   return (

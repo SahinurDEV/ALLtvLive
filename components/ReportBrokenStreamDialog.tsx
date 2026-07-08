@@ -1,43 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { X, Github, Copy, MessageSquareWarning } from "lucide-react";
+import { X, Send, MessageSquareWarning, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 
-// Configurable via env var — falls back to the app's own repo issues
-const ISSUE_REPO =
-  process.env.NEXT_PUBLIC_ISSUE_REPO || "iptv-org/iptv";
-
 const REASONS = [
-  { id: "wont_load", label: "Won't load / infinite spinner" },
-  { id: "wrong", label: "Wrong channel / wrong content" },
-  { id: "geo", label: "Geo-blocked (region locked)" },
-  { id: "buffers", label: "Buffers or freezes a lot" },
-  { id: "audio", label: "No audio / audio only" },
+  { id: "broken", label: "Stream won't load / infinite spinner" },
+  { id: "wrong_content", label: "Wrong channel / wrong content" },
+  { id: "inappropriate", label: "Inappropriate content" },
+  { id: "buffering", label: "Buffers or freezes a lot" },
+  { id: "other", label: "Something else" },
 ];
 
-const REPORT_QUEUE_KEY = "alltvlive-report-queue";
-
-interface QueuedReport {
-  channelId: string;
-  reason: string;
-  at: number;
-}
-
-function queueReport(report: QueuedReport) {
-  if (typeof window === "undefined") return;
-  try {
-    const existing: QueuedReport[] = JSON.parse(
-      localStorage.getItem(REPORT_QUEUE_KEY) || "[]"
-    );
-    existing.push(report);
-    localStorage.setItem(REPORT_QUEUE_KEY, JSON.stringify(existing.slice(-50)));
-  } catch {
-    // ignore
-  }
-}
+const MAX_NOTE_LEN = 500;
 
 export function ReportBrokenStreamDialog() {
   const reportOpen = useAppStore((s) => s.reportOpen);
@@ -45,6 +22,8 @@ export function ReportBrokenStreamDialog() {
   const channelId = useAppStore((s) => s.lastErrorChannelId);
   const allChannels = useAppStore((s) => s.allChannels);
   const [reason, setReason] = useState<string>(REASONS[0].id);
+  const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const channel = useMemo(
     () => allChannels.find((c) => c.id === channelId) || null,
@@ -53,46 +32,37 @@ export function ReportBrokenStreamDialog() {
 
   if (!reportOpen || !channel) return null;
 
-  const reasonLabel = REASONS.find((r) => r.id === reason)?.label || reason;
-  const streamsList = (channel.streams || [])
-    .map((s, i) => `- ${i + 1}. ${s.url} ${s.quality ? `(${s.quality})` : ""}`)
-    .join("\n");
-
-  const title = `[ALLtvLive] Broken stream: ${channel.name} (${channel.id})`;
-  const body = `**Channel:** ${channel.name}
-**ID:** ${channel.id}
-**Country:** ${channel.country}
-**Reason:** ${reasonLabel}
-
-**Known streams:**
-${streamsList || "(none)"}
-
-**Reported at:** ${new Date().toISOString()}
-`;
-
-  const issueUrl = `https://github.com/${ISSUE_REPO}/issues/new?title=${encodeURIComponent(
-    title
-  )}&body=${encodeURIComponent(body)}`;
-
-  const submit = () => {
-    queueReport({ channelId: channel.id, reason, at: Date.now() });
-    toast.success("Report saved locally");
-  };
-
-  const copyReport = async () => {
+  const submit = async () => {
+    setSubmitting(true);
     try {
-      await navigator.clipboard.writeText(`${title}\n\n${body}`);
-      toast.success("Report copied to clipboard");
-      submit();
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          channelId: channel.id,
+          channelName: channel.name,
+          reason,
+          note: note.trim() || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.status === 429) {
+        toast.error("You've reported a lot recently. Try again in a minute.");
+        return;
+      }
+      if (!res.ok || !data?.ok) {
+        toast.error("Couldn't send report. Please try again.");
+        return;
+      }
+      toast.success("Report sent — thanks for flagging this.");
+      setNote("");
+      setReason(REASONS[0].id);
+      closeReportDialog();
     } catch {
-      toast.error("Couldn't copy report");
+      toast.error("Network error while sending report.");
+    } finally {
+      setSubmitting(false);
     }
-  };
-
-  const openIssue = () => {
-    submit();
-    window.open(issueUrl, "_blank", "noopener,noreferrer");
-    closeReportDialog();
   };
 
   return (
@@ -157,19 +127,54 @@ ${streamsList || "(none)"}
             </div>
           </div>
 
+          <div>
+            <label
+              htmlFor="report-note"
+              className="text-xs font-semibold text-muted-foreground mb-1.5 block"
+            >
+              Anything else? (optional)
+            </label>
+            <textarea
+              id="report-note"
+              value={note}
+              maxLength={MAX_NOTE_LEN}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Add details — quality issues, region, timing, etc."
+              rows={3}
+              className="w-full rounded-lg bg-background border border-border/60 focus:outline-none focus:border-neon px-3 py-2 text-sm resize-none"
+            />
+            <p className="text-[10px] text-muted-foreground text-right mt-1">
+              {note.length}/{MAX_NOTE_LEN}
+            </p>
+          </div>
+
           <p className="text-[11px] text-muted-foreground">
-            Streams come from a public community project (iptv-org). Reports open a
-            GitHub issue upstream so maintainers can review.
+            Your IP is stored with the report so we can track duplicate flags. Nothing
+            else about you is collected.
           </p>
 
-          <div className="flex flex-wrap gap-2 pt-2">
-            <Button variant="neon" size="sm" onClick={openIssue} className="gap-1.5">
-              <Github className="h-3.5 w-3.5" />
-              Open GitHub issue
+          <div className="flex flex-wrap gap-2 pt-1 justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={closeReportDialog}
+              disabled={submitting}
+            >
+              Cancel
             </Button>
-            <Button variant="outline" size="sm" onClick={copyReport} className="gap-1.5">
-              <Copy className="h-3.5 w-3.5" />
-              Copy report
+            <Button
+              variant="neon"
+              size="sm"
+              onClick={submit}
+              disabled={submitting}
+              className="gap-1.5"
+            >
+              {submitting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Send className="h-3.5 w-3.5" />
+              )}
+              Send report
             </Button>
           </div>
         </div>
