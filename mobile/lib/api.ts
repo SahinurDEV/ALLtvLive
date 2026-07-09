@@ -47,6 +47,13 @@ export async function loadCatalog(): Promise<CatalogData> {
       if (!chStreams || chStreams.length === 0) continue;
       enriched.push({
         ...ch,
+        // The iptv-org API no longer guarantees these array fields on every
+        // channel (e.g. `languages` was dropped), so normalise them here to
+        // keep every consumer safe from `.length`/`.map` on undefined.
+        alt_names: Array.isArray(ch.alt_names) ? ch.alt_names : [],
+        owners: Array.isArray(ch.owners) ? ch.owners : [],
+        languages: Array.isArray(ch.languages) ? ch.languages : [],
+        categories: Array.isArray(ch.categories) ? ch.categories : [],
         logo: logoMap.get(ch.id) || null,
         streams: chStreams,
       });

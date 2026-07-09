@@ -1,5 +1,5 @@
-import { Tabs } from "expo-router";
-import { Text } from "react-native";
+import { Tabs, useRouter } from "expo-router";
+import { Pressable, Text } from "react-native";
 import { theme } from "@/lib/theme";
 
 function Icon({ label, focused }: { label: string; focused: boolean }) {
@@ -11,6 +11,7 @@ function Icon({ label, focused }: { label: string; focused: boolean }) {
 }
 
 export default function TabsLayout() {
+  const router = useRouter();
   return (
     <Tabs
       screenOptions={{
@@ -30,6 +31,15 @@ export default function TabsLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ focused }) => <Icon label="⌂" focused={focused} />,
+          headerRight: () => (
+            <Pressable
+              onPress={() => router.push("/about")}
+              hitSlop={12}
+              style={{ paddingHorizontal: 16 }}
+            >
+              <Text style={{ color: theme.textMuted, fontSize: 20 }}>ⓘ</Text>
+            </Pressable>
+          ),
         }}
       />
       <Tabs.Screen
