@@ -27,6 +27,7 @@ export default function RootLayout() {
           name="channel/[id]"
           options={{ title: "Player", presentation: "modal" }}
         />
+        <Stack.Screen name="about" options={{ title: "About" }} />
       </Stack>
     </GestureHandlerRootView>
   );
