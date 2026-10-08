@@ -148,6 +148,11 @@ All data is fetched client-side and cached for 10 minutes via SWR.
 | `↑` / `↓` | Volume Up / Down |
 | `Ctrl+K` | Focus Search |
 
+## 🌐 Similar Projects
+
+- [Global Free TV](https://www.globalfreetv.com/) - 7000+ free live TV channels from 150+ countries
+- [Squid TV](https://squidtv.net/) - Global TV directory
+
 ## 🤝 Contributing
 
 Contributions are welcome! Feel free to open issues or submit pull requests.
