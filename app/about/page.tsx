@@ -90,7 +90,7 @@ export default function AboutPage() {
             ALLtvLive is open source under the MIT license.
           </p>
           <a
-            href="https://github.com/devSahinur/ALLtvLive"
+            href="https://github.com/SahinurDEV/ALLtvLive"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm text-neon hover:underline"

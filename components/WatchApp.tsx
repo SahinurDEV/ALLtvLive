@@ -474,7 +474,7 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
                     </a>
                     <span className="mx-2">·</span>
                     <a
-                      href="https://github.com/devSahinur/ALLtvLive"
+                      href="https://github.com/SahinurDEV/ALLtvLive"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:text-neon transition-colors"

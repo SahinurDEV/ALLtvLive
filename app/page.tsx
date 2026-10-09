@@ -448,7 +448,7 @@ export default function LandingPage() {
             About
           </Link>
           <a
-            href="https://github.com/devSahinur/ALLtvLive"
+            href="https://github.com/SahinurDEV/ALLtvLive"
             target="_blank"
             rel="noopener noreferrer"
             className="text-muted-foreground hover:text-foreground transition-colors hidden sm:inline"
@@ -784,7 +784,7 @@ export default function LandingPage() {
               About
             </Link>
             <a
-              href="https://github.com/devSahinur/ALLtvLive"
+              href="https://github.com/SahinurDEV/ALLtvLive"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-foreground transition-colors"

@@ -94,7 +94,7 @@ export default function PublicApiPage() {
           <p className="text-xs text-muted-foreground">
             Have questions? Open an issue on{" "}
             <a
-              href="https://github.com/devSahinur/ALLtvLive"
+              href="https://github.com/SahinurDEV/ALLtvLive"
               target="_blank"
               rel="noopener noreferrer"
               className="text-neon hover:underline inline-flex items-center gap-1"

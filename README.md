@@ -10,7 +10,7 @@ Watch **10,000+** free live TV channels from around the world in one place.
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8?logo=tailwindcss)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-MIT-green)](#license)
-[![GitHub](https://img.shields.io/github/stars/devSahinur/ALLtvLive?style=social)](https://github.com/devSahinur/ALLtvLive)
+[![GitHub](https://img.shields.io/github/stars/SahinurDEV/ALLtvLive?style=social)](https://github.com/SahinurDEV/ALLtvLive)
 [![Live Demo](https://img.shields.io/badge/Live-alltvlive.vercel.app-00ff9d?logo=vercel)](https://alltvlive.vercel.app)
 
 **[🔴 Live Demo → alltvlive.vercel.app](https://alltvlive.vercel.app)**
@@ -91,7 +91,7 @@ alltvlive/
 
 ```bash
 # Clone the repository
-git clone https://github.com/devSahinur/ALLtvLive.git
+git clone https://github.com/SahinurDEV/ALLtvLive.git
 cd ALLtvLive
 
 # Install dependencies
@@ -121,7 +121,7 @@ The easiest way to deploy ALLtvLive:
 
 No environment variables needed — the app uses public APIs.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/devSahinur/ALLtvLive)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/SahinurDEV/ALLtvLive)
 
 ## 📡 Data Source
 
@@ -175,8 +175,8 @@ ALLtvLive does not host or provide any video content. It aggregates publicly ava
 
 <div align="center">
 
-**Built with ❤️ by [devSahinur](https://github.com/devSahinur)**
+**Built with ❤️ by [devSahinur](https://github.com/SahinurDEV)**
 
-[GitHub](https://github.com/devSahinur/ALLtvLive) · [Live Demo](https://alltvlive.vercel.app) · [Report Bug](https://github.com/devSahinur/ALLtvLive/issues)
+[GitHub](https://github.com/SahinurDEV/ALLtvLive) · [Live Demo](https://alltvlive.vercel.app) · [Report Bug](https://github.com/SahinurDEV/ALLtvLive/issues)
 
 </div>
