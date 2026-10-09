@@ -175,7 +175,7 @@ ALLtvLive does not host or provide any video content. It aggregates publicly ava
 
 <div align="center">
 
-**Built with ❤️ by [devSahinur](https://github.com/SahinurDEV)**
+**Built with ❤️ by [SahinurDEV](https://github.com/SahinurDEV)**
 
 [GitHub](https://github.com/SahinurDEV/ALLtvLive) · [Live Demo](https://alltvlive.vercel.app) · [Report Bug](https://github.com/SahinurDEV/ALLtvLive/issues)
 
