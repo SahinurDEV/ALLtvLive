@@ -30,34 +30,52 @@ function isPrivateIp(ip: string): boolean {
   return false;
 }
 
-async function fetchGeo(ip: string): Promise<ResolvedGeo | null> {
+async function fetchJson<T>(url: string): Promise<T | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(
-      `http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,country,countryCode,region,city`,
-      { signal: controller.signal, cache: "no-store" }
-    );
+    const res = await fetch(url, { signal: controller.signal, cache: "no-store" });
     if (!res.ok) return null;
-    const data = (await res.json()) as {
-      status?: string;
-      country?: string;
-      countryCode?: string;
-      region?: string;
-      city?: string;
-    };
-    if (data.status !== "success") return null;
-    return {
-      country: data.country || null,
-      countryCode: data.countryCode || null,
-      region: data.region || null,
-      city: data.city || null,
-    };
+    return (await res.json()) as T;
   } catch {
     return null;
   } finally {
     clearTimeout(timer);
   }
+}
+
+// HTTPS lookup first (ipwho.is); ip-api.com's free tier is HTTP-only, so it is
+// only a fallback. The IP passed in is already shortened (see anonymizeIp).
+async function fetchGeo(ip: string): Promise<ResolvedGeo | null> {
+  const a = await fetchJson<{
+    success?: boolean;
+    country?: string;
+    country_code?: string;
+    region?: string;
+    city?: string;
+  }>(`https://ipwho.is/${encodeURIComponent(ip)}?fields=success,country,country_code,region,city`);
+  if (a?.success) {
+    return {
+      country: a.country || null,
+      countryCode: a.country_code || null,
+      region: a.region || null,
+      city: a.city || null,
+    };
+  }
+  const b = await fetchJson<{
+    status?: string;
+    country?: string;
+    countryCode?: string;
+    region?: string;
+    city?: string;
+  }>(`http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,country,countryCode,region,city`);
+  if (b?.status !== "success") return null;
+  return {
+    country: b.country || null,
+    countryCode: b.countryCode || null,
+    region: b.region || null,
+    city: b.city || null,
+  };
 }
 
 export async function resolveIp(ip: string): Promise<ResolvedGeo> {
