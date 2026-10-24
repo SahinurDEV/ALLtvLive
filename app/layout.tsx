@@ -10,6 +10,7 @@ const ADSENSE_CLIENT_ID = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://alltvlive.vercel.app"),
   title: "ALLtvLive - Free Live TV Channels",
   description:
     "Watch thousands of free live TV channels from around the world.",
