@@ -61,15 +61,18 @@ export default function AdminPage() {
     "checking"
   );
   const [passwordInput, setPasswordInput] = useState("");
+  const [codeInput, setCodeInput] = useState("");
+  const [needsCode, setNeedsCode] = useState(false);
   const [authError, setAuthError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/session")
       .then((r) => r.json())
-      .then((d) =>
-        setAuthState(d?.authenticated ? "signed-in" : "signed-out")
-      )
+      .then((d) => {
+        setNeedsCode(!!d?.totpRequired);
+        setAuthState(d?.authenticated ? "signed-in" : "signed-out");
+      })
       .catch(() => setAuthState("signed-out"));
   }, []);
 
@@ -81,16 +84,19 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ password: passwordInput }),
+        body: JSON.stringify({ password: passwordInput, code: codeInput.trim() }),
       });
       const data = await res.json();
       if (res.ok && data.ok) {
         setAuthState("signed-in");
         setPasswordInput("");
+        setCodeInput("");
       } else {
         setAuthError(
           data.error === "invalid_credentials"
-            ? "Incorrect password."
+            ? needsCode
+              ? "Incorrect password or code."
+              : "Incorrect password."
             : "Sign-in failed."
         );
       }
@@ -140,6 +146,19 @@ export default function AdminPage() {
               onChange={(e) => setPasswordInput(e.target.value)}
               className="w-full px-4 py-3 rounded-lg bg-card border border-border focus:outline-none focus:border-neon transition-colors"
             />
+            {needsCode && (
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                placeholder="6-digit authenticator code"
+                value={codeInput}
+                onChange={(e) => setCodeInput(e.target.value.replace(/\D/g, ""))}
+                className="w-full px-4 py-3 rounded-lg bg-card border border-border focus:outline-none focus:border-neon transition-colors tracking-widest"
+              />
+            )}
             {authError && (
               <p className="text-sm text-destructive">{authError}</p>
             )}
@@ -147,7 +166,7 @@ export default function AdminPage() {
               type="submit"
               variant="neon"
               className="w-full"
-              disabled={submitting || !passwordInput}
+              disabled={submitting || !passwordInput || (needsCode && codeInput.length !== 6)}
             >
               {submitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -158,7 +177,7 @@ export default function AdminPage() {
             <p className="text-[11px] text-muted-foreground text-center mt-3 leading-relaxed">
               Verified server-side against{" "}
               <code className="text-foreground">ADMIN_PASSWORD</code>. Sessions are
-              signed httpOnly cookies valid for 7 days.
+              signed httpOnly cookies valid for 24 hours and revoked on sign-out.
             </p>
           </form>
           <div className="mt-6 text-center">
