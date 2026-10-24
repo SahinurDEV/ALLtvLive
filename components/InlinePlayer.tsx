@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
+import type { ChannelWithMeta } from "@/lib/types";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Maximize2,
@@ -11,6 +12,7 @@ import {
   VolumeX,
   Volume1,
   PictureInPicture2,
+  Cast,
   Heart,
   Share2,
   Loader2,
@@ -195,6 +197,44 @@ export function InlinePlayer() {
     [currentChannel, allChannels, openPlayer]
   );
 
+  // "Last channel" (like a TV remote's recall button)
+  const prevChannelRef = useRef<ChannelWithMeta | null>(null);
+  const lastSeenRef = useRef<ChannelWithMeta | null>(null);
+  useEffect(() => {
+    if (!currentChannel) return;
+    if (lastSeenRef.current && lastSeenRef.current.id !== currentChannel.id) {
+      prevChannelRef.current = lastSeenRef.current;
+    }
+    lastSeenRef.current = currentChannel;
+  }, [currentChannel]);
+  const recallLastChannel = useCallback(() => {
+    const prev = prevChannelRef.current;
+    if (prev) openPlayer(prev);
+    else toast.info("No previous channel yet");
+  }, [openPlayer]);
+
+  // Cast to a TV: Remote Playback API (Chrome/Android: Chromecast) or
+  // Safari's AirPlay picker. No SDK or API key required.
+  const [canCast, setCanCast] = useState(false);
+  useEffect(() => {
+    const v = videoRef.current as (HTMLVideoElement & { webkitShowPlaybackTargetPicker?: () => void }) | null;
+    if (!v) return;
+    setCanCast(!!(v.remote || v.webkitShowPlaybackTargetPicker));
+  }, [videoRef, currentChannel]);
+  const handleCast = useCallback(async () => {
+    const v = videoRef.current as (HTMLVideoElement & { webkitShowPlaybackTargetPicker?: () => void }) | null;
+    if (!v) return;
+    try {
+      if (v.webkitShowPlaybackTargetPicker) {
+        v.webkitShowPlaybackTargetPicker();
+      } else if (v.remote) {
+        await v.remote.prompt();
+      }
+    } catch {
+      toast.error("No cast device found, or this stream can't be cast from the browser.");
+    }
+  }, [videoRef]);
+
   // Auto-next on error
   useEffect(() => {
     if (!autoNext || !isError) return;
@@ -373,10 +413,22 @@ export function InlinePlayer() {
           handleScreenshot();
           break;
         case "n":
+        case "PageDown":
+        case "ChannelDown":
+        case "MediaTrackNext":
+          e.preventDefault();
           navigateChannel("next");
           break;
         case "p":
+        case "PageUp":
+        case "ChannelUp":
+        case "MediaTrackPrevious":
+          e.preventDefault();
           navigateChannel("prev");
+          break;
+        case "l":
+        case "L":
+          recallLastChannel();
           break;
         case ".":
         case ">":
@@ -416,6 +468,7 @@ export function InlinePlayer() {
     handleScreenshot,
     navigateChannel,
     cyclePlaybackRate,
+    recallLastChannel,
   ]);
 
   const resetControlsTimeout = useCallback(() => {
@@ -903,6 +956,17 @@ export function InlinePlayer() {
                       </AnimatePresence>
                     </div>
 
+                    {canCast && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleCast}
+                        className="text-white hover:bg-white/10 h-7 w-7"
+                        aria-label="Cast to TV"
+                      >
+                        <Cast className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -976,8 +1040,9 @@ export function InlinePlayer() {
                     <Shortcut k="F" desc="Fullscreen" />
                     <Shortcut k="T" desc="Theater mode" />
                     <Shortcut k="S" desc="Screenshot" />
-                    <Shortcut k="N" desc="Next channel" />
-                    <Shortcut k="P" desc="Previous channel" />
+                    <Shortcut k="N / PgDn" desc="Next channel" />
+                    <Shortcut k="P / PgUp" desc="Previous channel" />
+                    <Shortcut k="L" desc="Last channel" />
                     <Shortcut k="↑ / ↓" desc="Volume ±5%" />
                     <Shortcut k="> / <" desc="Speed ± step" />
                     <Shortcut k="?" desc="Toggle this menu" />
