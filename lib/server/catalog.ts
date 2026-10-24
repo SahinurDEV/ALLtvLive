@@ -20,7 +20,7 @@ export interface CatalogChannel {
   website: string | null;
 }
 
-interface RawChannel {
+export interface RawChannel {
   id: string;
   name: string;
   country: string;
@@ -31,7 +31,17 @@ interface RawChannel {
   closed?: string | null;
 }
 
-let cache: { at: number; data: Promise<Map<string, CatalogChannel>> } | null = null;
+export interface SlimCatalog {
+  /** iptv-org channel objects, only playable + not NSFW + not blocked */
+  channels: RawChannel[];
+  /** streams that belong to one of those channels */
+  streams: Array<{ channel: string | null }>;
+  /** first logo per channel */
+  logos: Array<{ channel: string; url: string }>;
+  byId: Map<string, CatalogChannel>;
+}
+
+let cache: { at: number; data: Promise<SlimCatalog> } | null = null;
 
 async function getJson<T>(name: string): Promise<T> {
   const res = await fetch(`${BASE}/${name}`, { cache: "no-store" });
@@ -39,7 +49,7 @@ async function getJson<T>(name: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-async function load(): Promise<Map<string, CatalogChannel>> {
+async function load(): Promise<SlimCatalog> {
   const [channels, streams, logos] = await Promise.all([
     getJson<RawChannel[]>("channels.json"),
     getJson<Array<{ channel: string | null }>>("streams.json"),
@@ -51,8 +61,10 @@ async function load(): Promise<Map<string, CatalogChannel>> {
   for (const l of logos) if (!logo.has(l.channel)) logo.set(l.channel, l.url);
 
   const map = new Map<string, CatalogChannel>();
+  const keptChannels: RawChannel[] = [];
   for (const c of channels) {
     if (c.is_nsfw || isBlocked(c.id) || !withStreams.has(c.id)) continue;
+    keptChannels.push(c);
     map.set(c.id, {
       id: c.id,
       name: c.name,
@@ -63,11 +75,16 @@ async function load(): Promise<Map<string, CatalogChannel>> {
       website: c.website || null,
     });
   }
-  return map;
+  return {
+    channels: keptChannels,
+    streams: streams.filter((st) => st.channel && map.has(st.channel)),
+    logos: [...logo.entries()].filter(([id]) => map.has(id)).map(([channel, url]) => ({ channel, url })),
+    byId: map,
+  };
 }
 
-/** Playable, non-blocked channels by id. Throws if iptv-org is unreachable. */
-export function getCatalog(): Promise<Map<string, CatalogChannel>> {
+/** Slim catalog (playable, non-blocked). Throws if iptv-org is unreachable. */
+export function getSlimCatalog(): Promise<SlimCatalog> {
   if (!cache || Date.now() - cache.at > TTL_MS) {
     const data = load();
     cache = { at: Date.now(), data };
@@ -76,6 +93,11 @@ export function getCatalog(): Promise<Map<string, CatalogChannel>> {
     });
   }
   return cache.data;
+}
+
+/** Playable, non-blocked channels by id. */
+export async function getCatalog(): Promise<Map<string, CatalogChannel>> {
+  return (await getSlimCatalog()).byId;
 }
 
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://alltvlive.vercel.app").replace(/\/$/, "");
