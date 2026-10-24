@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import type { ChannelWithMeta } from "@/lib/types";
+import { NowNext } from "@/components/player/NowNext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Maximize2,
@@ -1152,6 +1153,8 @@ export function InlinePlayer() {
                 </span>
               )}
             </div>
+
+            <NowNext channel={currentChannel} />
 
             {currentChannel.network && (
               <div className="flex items-center gap-1.5">
