@@ -21,6 +21,11 @@ import { isBlocked } from "@/lib/blocklist";
 
 const BASE_URL = "https://iptv-org.github.io/api";
 
+// Slim, CDN-cached copies from our own API; fall back to iptv-org directly
+// (full files) if that fails, e.g. when self-hosted without network access.
+const catalogFetcher = <T,>(url: string): Promise<T> =>
+  fetcher<T>(url).catch(() => fetcher<T>(url.replace("/api/catalog/", `${BASE_URL}/`) + ".json"));
+
 function customToChannelWithMeta(c: CustomChannel): ChannelWithMeta {
   return {
     id: c.id,
@@ -102,7 +107,7 @@ export function useChannels() {
     data: channels,
     error: channelsError,
     isLoading: channelsLoading,
-  } = useSWR<Channel[]>(`${BASE_URL}/channels.json`, fetcher, {
+  } = useSWR<Channel[]>("/api/catalog/channels", catalogFetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 600000,
   });
@@ -111,14 +116,14 @@ export function useChannels() {
     data: streams,
     error: streamsError,
     isLoading: streamsLoading,
-  } = useSWR<Stream[]>(`${BASE_URL}/streams.json`, fetcher, {
+  } = useSWR<Stream[]>("/api/catalog/streams", catalogFetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 600000,
   });
 
   const { data: logos } = useSWR<Logo[]>(
-    `${BASE_URL}/logos.json`,
-    fetcher,
+    "/api/catalog/logos",
+    catalogFetcher,
     { revalidateOnFocus: false, dedupingInterval: 600000 }
   );
 
