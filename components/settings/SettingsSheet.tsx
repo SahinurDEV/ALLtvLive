@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { KidsModeSection } from "@/components/settings/KidsModeSection";
+import { useT } from "@/lib/i18n";
+import { LanguagePicker } from "@/components/settings/LanguagePicker";
 
 function ThemeChoice({
   active,
@@ -65,6 +67,7 @@ function ViewChoice({
 
 export function SettingsSheet() {
   const open = useAppStore((s) => s.settingsOpen);
+  const t = useT();
   const setOpen = useAppStore((s) => s.setSettingsOpen);
   const settings = useAppStore((s) => s.settings);
   const updateSettings = useAppStore((s) => s.updateSettings);
@@ -118,7 +121,7 @@ export function SettingsSheet() {
             aria-labelledby="settings-title"
           >
             <div className="flex items-center justify-between p-4 border-b border-border sticky top-0 bg-card z-10">
-              <h2 id="settings-title" className="font-bold text-lg">Settings</h2>
+              <h2 id="settings-title" className="font-bold text-lg">{t("settings.title")}</h2>
               <Button
                 variant="ghost"
                 size="icon"
@@ -130,17 +133,19 @@ export function SettingsSheet() {
             </div>
 
             <div className="p-4 space-y-6">
+              <LanguagePicker />
+
               {/* Autoplay */}
               <section>
                 <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
                   <PlayCircle className="h-4 w-4 text-neon" />
-                  Autoplay
+                  {t("settings.autoplay")}
                 </h3>
                 <label className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border/50 cursor-pointer hover:bg-secondary/50">
                   <div className="text-sm">
-                    <div className="font-medium">Auto-play on load</div>
+                    <div className="font-medium">{t("settings.autoplayOn")}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      Automatically start a channel when the app opens
+                      {t("settings.autoplayHint")}
                     </div>
                   </div>
                   <input
@@ -157,13 +162,13 @@ export function SettingsSheet() {
               <section>
                 <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-neon" />
-                  Channel reliability
+                  {t("settings.reliability")}
                 </h3>
                 <label className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border/50 cursor-pointer hover:bg-secondary/50">
                   <div className="text-sm">
-                    <div className="font-medium">Hide broken channels</div>
+                    <div className="font-medium">{t("settings.hideBroken")}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      Automatically skip channels that failed to play
+                      {t("settings.hideBrokenHint")}
                       {brokenCount > 0 && (
                         <span className="text-neon"> · {brokenCount} known broken</span>
                       )}
@@ -196,7 +201,7 @@ export function SettingsSheet() {
 
               {/* View mode */}
               <section>
-                <h3 className="font-semibold text-sm mb-2">Channel view</h3>
+                <h3 className="font-semibold text-sm mb-2">{t("settings.view")}</h3>
                 <div className="flex gap-2">
                   <ViewChoice
                     active={settings.viewMode === "grid"}
@@ -221,7 +226,7 @@ export function SettingsSheet() {
 
               {/* Theme */}
               <section>
-                <h3 className="font-semibold text-sm mb-2">Theme</h3>
+                <h3 className="font-semibold text-sm mb-2">{t("settings.theme")}</h3>
                 <div className="flex gap-2">
                   <ThemeChoice
                     active={theme === "light"}
@@ -246,7 +251,7 @@ export function SettingsSheet() {
 
               {/* Data */}
               <section>
-                <h3 className="font-semibold text-sm mb-2">Your data</h3>
+                <h3 className="font-semibold text-sm mb-2">{t("settings.data")}</h3>
                 <div className="space-y-2">
                   <Button
                     variant="outline"

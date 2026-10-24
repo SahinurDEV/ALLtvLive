@@ -21,6 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useAppStore } from "@/lib/store";
 import type { Country, Category, Language } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 interface SidebarProps {
   countries: Country[];
@@ -43,6 +44,7 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
     openCustomDialog,
     clearFilters,
   } = useAppStore();
+  const t = useT();
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
@@ -80,11 +82,11 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
   };
 
   const navItems = [
-    { id: "home" as const, label: "Home", icon: Home },
-    { id: "countries" as const, label: "Countries", icon: Globe },
-    { id: "categories" as const, label: "Categories", icon: LayoutGrid },
-    { id: "languages" as const, label: "Languages", icon: LanguagesIcon },
-    { id: "favorites" as const, label: "Favorites", icon: Heart, count: favorites.length },
+    { id: "home" as const, label: t("nav.home"), icon: Home },
+    { id: "countries" as const, label: t("nav.countries"), icon: Globe },
+    { id: "categories" as const, label: t("nav.categories"), icon: LayoutGrid },
+    { id: "languages" as const, label: t("nav.languages"), icon: LanguagesIcon },
+    { id: "favorites" as const, label: t("nav.favorites"), icon: Heart, count: favorites.length },
   ];
 
   const handleMyChannelsClick = () => {
@@ -164,7 +166,7 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
               >
                 <Radio className="h-4 w-4 shrink-0" />
-                My Channels
+                {t("nav.myChannels")}
                 {customChannels.length > 0 && (
                   <Badge
                     variant="neon"
@@ -180,7 +182,7 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium border border-dashed border-border/60 text-muted-foreground hover:text-neon hover:border-neon/40 hover:bg-neon/5 transition-colors mt-1"
               >
                 <Plus className="h-4 w-4 shrink-0" />
-                Add Custom Channel
+                {t("nav.addCustom")}
               </button>
 
               <Separator className="my-3" />
@@ -192,7 +194,7 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
               >
                 <span className="flex items-center gap-2">
                   <Globe className="h-4 w-4" />
-                  Browse Countries
+                  {t("nav.browseCountries")}
                 </span>
                 {expandedSection === "countries" ? (
                   <ChevronDown className="h-4 w-4" />
@@ -236,7 +238,7 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
               >
                 <span className="flex items-center gap-2">
                   <LayoutGrid className="h-4 w-4" />
-                  Browse Categories
+                  {t("nav.browseCategories")}
                 </span>
                 {expandedSection === "categories" ? (
                   <ChevronDown className="h-4 w-4" />
@@ -279,7 +281,7 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
               >
                 <span className="flex items-center gap-2">
                   <LanguagesIcon className="h-4 w-4" />
-                  Browse Languages
+                  {t("nav.browseLanguages")}
                 </span>
                 {expandedSection === "languages" ? (
                   <ChevronDown className="h-4 w-4" />
