@@ -18,6 +18,10 @@ export interface UserSettings {
   autoplay: boolean;
   viewMode: ViewMode;
   hideBrokenChannels: boolean;
+  /** Kids mode: only kid-friendly categories are shown */
+  kidsMode: boolean;
+  /** Optional 4-digit PIN needed to turn kids mode off (local soft lock) */
+  kidsPin: string | null;
 }
 
 const SETTINGS_KEY = "alltvlive-settings";
@@ -25,19 +29,21 @@ const CUSTOM_CHANNELS_KEY = "alltvlive-custom-channels";
 
 function loadSettings(): UserSettings {
   if (typeof window === "undefined") {
-    return { autoplay: true, viewMode: "grid", hideBrokenChannels: true };
+    return { autoplay: true, viewMode: "grid", hideBrokenChannels: true, kidsMode: false, kidsPin: null };
   }
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return { autoplay: true, viewMode: "grid", hideBrokenChannels: true };
+    if (!raw) return { autoplay: true, viewMode: "grid", hideBrokenChannels: true, kidsMode: false, kidsPin: null };
     const parsed = JSON.parse(raw);
     return {
       autoplay: parsed?.autoplay ?? true,
       viewMode: (parsed?.viewMode as ViewMode) ?? "grid",
       hideBrokenChannels: parsed?.hideBrokenChannels ?? true,
+      kidsMode: parsed?.kidsMode ?? false,
+      kidsPin: typeof parsed?.kidsPin === "string" ? parsed.kidsPin : null,
     };
   } catch {
-    return { autoplay: true, viewMode: "grid", hideBrokenChannels: true };
+    return { autoplay: true, viewMode: "grid", hideBrokenChannels: true, kidsMode: false, kidsPin: null };
   }
 }
 
@@ -280,7 +286,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   // Settings
-  settings: { autoplay: true, viewMode: "grid", hideBrokenChannels: true },
+  settings: { autoplay: true, viewMode: "grid", hideBrokenChannels: true, kidsMode: false, kidsPin: null },
   settingsHydrated: false,
   hydrateSettings: () => {
     if (get().settingsHydrated) return;
