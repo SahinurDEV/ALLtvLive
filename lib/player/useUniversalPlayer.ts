@@ -60,6 +60,10 @@ export function useUniversalPlayer({
   const [sourceIndex, setSourceIndex] = useState(0);
   const [phase, setPhase] = useState<PlayerPhase>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // HTTP status of the last failed source and how many sources were refused
+  // (401/403/451), so the final message can say "blocked in your region".
+  const lastStatusRef = useRef<number | null>(null);
+  const refusedCountRef = useRef(0);
 
   // One-shot listener that resumes playback with sound as soon as the user
   // interacts with the page — used only when the browser blocks sound autoplay.
@@ -139,6 +143,8 @@ export function useUniversalPlayer({
       currentChannelIdRef.current = channel?.id || null;
       setSourceIndex(0);
       attemptsRef.current = 0;
+      lastStatusRef.current = null;
+      refusedCountRef.current = 0;
       setPhase(channel ? "loading" : "idle");
       setErrorMessage(null);
       clearGestureListener();
@@ -153,7 +159,12 @@ export function useUniversalPlayer({
       const next = idx + 1;
       if (next >= sources.length) {
         setPhase("error");
-        setErrorMessage("No working streams available for this channel.");
+        const allRefused = sources.length > 0 && refusedCountRef.current >= sources.length;
+        setErrorMessage(
+          allRefused
+            ? "The broadcaster refused the connection (HTTP 403). The stream is probably blocked in your region, or only works on the broadcaster's own site."
+            : "No working streams available for this channel."
+        );
         if (channel) {
           reportPlaybackResult(channel.id, false, channel.name);
           onFatalError?.(channel.id);
@@ -169,7 +180,12 @@ export function useUniversalPlayer({
     (reason: string) => {
       clearTimers();
       teardownHls();
-      if (attemptsRef.current < MAX_RETRIES_PER_SOURCE) {
+      const status = lastStatusRef.current;
+      lastStatusRef.current = null;
+      // A refusal or missing file won't fix itself on retry: move on now.
+      const permanent = status === 401 || status === 403 || status === 404 || status === 410 || status === 451;
+      if (status === 401 || status === 403 || status === 451) refusedCountRef.current += 1;
+      if (!permanent && attemptsRef.current < MAX_RETRIES_PER_SOURCE) {
         attemptsRef.current += 1;
         const backoff = attemptsRef.current === 1 ? 1000 : 3000;
         retryTimeoutRef.current = setTimeout(() => {
@@ -261,6 +277,8 @@ export function useUniversalPlayer({
         });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
+          const code = (data as { response?: { code?: number } }).response?.code;
+          if (typeof code === "number" && code >= 400) lastStatusRef.current = code;
           if (data.fatal) {
             handleSourceFailure(`hls fatal: ${data.type}`);
           }
