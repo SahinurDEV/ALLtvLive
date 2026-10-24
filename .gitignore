@@ -27,3 +27,7 @@ next-env.d.ts
 
 # local agent state
 .claude/
+
+# playwright
+/test-results/
+/playwright-report/
