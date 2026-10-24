@@ -173,6 +173,11 @@ npm run test:e2e
 | `M` | Mute / Unmute |
 | `F` | Toggle Fullscreen |
 | `↑` / `↓` | Volume Up / Down |
+| `N` / `Page Down` | Next channel (TV remotes: Channel Down) |
+| `P` / `Page Up` | Previous channel (TV remotes: Channel Up) |
+| `L` | Back to the last channel you watched |
+| `T` | Theater mode |
+| `?` | Show all shortcuts |
 | `Ctrl+K` | Focus Search |
 
 ## 🌐 Similar Projects
