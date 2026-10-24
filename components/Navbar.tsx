@@ -57,7 +57,7 @@ export function Navbar() {
     <header className="sticky top-0 z-30 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="flex items-center justify-between h-14 px-3 sm:px-4 gap-2 sm:gap-4">
         {/* Left: hamburger + logo (mobile) */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <Button
             variant="ghost"
             size="icon"
@@ -69,7 +69,7 @@ export function Navbar() {
           </Button>
           <div className="flex items-center gap-2 lg:hidden">
             <Tv className="h-5 w-5 text-neon" />
-            <span className="font-bold">
+            <span className="font-bold hidden min-[420px]:inline">
               ALL<span className="text-neon">tv</span>
             </span>
           </div>
@@ -121,7 +121,7 @@ export function Navbar() {
             variant="neon"
             size="icon"
             onClick={handleRandomChannel}
-            className="sm:hidden"
+            className="hidden min-[420px]:inline-flex sm:hidden"
             aria-label="Play a random channel"
           >
             <Shuffle className="h-4 w-4" />
