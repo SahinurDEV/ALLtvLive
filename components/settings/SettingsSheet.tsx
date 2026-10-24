@@ -7,6 +7,7 @@ import { useAppStore, type ViewMode } from "@/lib/store";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { KidsModeSection } from "@/components/settings/KidsModeSection";
 
 function ThemeChoice({
   active,
@@ -190,6 +191,8 @@ export function SettingsSheet() {
                   </Button>
                 )}
               </section>
+
+              <KidsModeSection />
 
               {/* View mode */}
               <section>

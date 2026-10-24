@@ -23,6 +23,9 @@ const BASE_URL = "https://iptv-org.github.io/api";
 
 // Slim, CDN-cached copies from our own API; fall back to iptv-org directly
 // (full files) if that fails, e.g. when self-hosted without network access.
+// Categories shown in kids mode (iptv-org category ids).
+const KIDS_CATEGORIES = new Set(["kids", "animation", "family", "education"]);
+
 const catalogFetcher = <T,>(url: string): Promise<T> =>
   fetcher<T>(url).catch(() => fetcher<T>(url.replace("/api/catalog/", `${BASE_URL}/`) + ".json"));
 
@@ -150,6 +153,7 @@ export function useChannels() {
   const userCountry = useAppStore((s) => s.userCountry);
   const brokenChannelIds = useAppStore((s) => s.brokenChannelIds);
   const hideBroken = useAppStore((s) => s.settings.hideBrokenChannels);
+  const kidsMode = useAppStore((s) => s.settings.kidsMode);
   const customChannels = useAppStore((s) => s.customChannels);
 
   const { channels: broadcastChannels } = useBroadcastChannels();
@@ -213,6 +217,7 @@ export function useChannels() {
 
     for (const channel of channels) {
       if (channel.is_nsfw || isBlocked(channel.id)) continue;
+      if (kidsMode && !channel.categories?.some((c) => KIDS_CATEGORIES.has(c))) continue;
 
       const channelStreams = streamMap.get(channel.id);
       // Skip channels with no streams at all
@@ -244,6 +249,8 @@ export function useChannels() {
     });
 
     // Order: user's own custom channels first, then admin broadcast, then catalog
+    // Kids mode shows only kid-friendly catalog channels (no custom/broadcast).
+    if (kidsMode) return result;
     return [...customEnriched, ...broadcastEnriched, ...result];
   }, [
     channels,
@@ -253,6 +260,7 @@ export function useChannels() {
     logoMap,
     brokenSet,
     hideBroken,
+    kidsMode,
     customEnriched,
     broadcastEnriched,
   ]);
