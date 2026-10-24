@@ -1,4 +1,4 @@
-import { getDb, IP_GEO_COLLECTION } from "@/lib/db/mongo";
+import { getDb, IP_GEO_COLLECTION, RETENTION } from "@/lib/db/mongo";
 
 interface IpGeoDoc {
   _id: string;
@@ -90,7 +90,7 @@ export async function resolveIp(ip: string): Promise<ResolvedGeo> {
     await col.updateOne(
       { _id: ip },
       {
-        $set: { fetchedAt: now, country: null, countryCode: null, city: null, region: null },
+        $set: { fetchedAt: now, expireAt: new Date(now + RETENTION.ipGeo), country: null, countryCode: null, city: null, region: null },
         $inc: { failedAttempts: 1 },
       },
       { upsert: true }
@@ -107,6 +107,7 @@ export async function resolveIp(ip: string): Promise<ResolvedGeo> {
         city: fetched.city,
         region: fetched.region,
         fetchedAt: now,
+        expireAt: new Date(now + RETENTION.ipGeo),
         failedAttempts: 0,
       },
     },

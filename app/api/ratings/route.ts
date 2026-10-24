@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, RATINGS_COLLECTION } from "@/lib/db/mongo";
 import { isAuthenticated } from "@/lib/admin/auth";
-import { extractIp } from "@/lib/admin/ipUtils";
+import { extractIp, hashIp } from "@/lib/admin/ipUtils";
 import { checkRateLimit } from "@/lib/admin/rateLimit";
 
 export const runtime = "nodejs";
@@ -26,8 +26,9 @@ function clip(v: unknown, max: number): string | null {
 }
 
 export async function POST(req: Request) {
-  const ip = extractIp(req);
-  const rl = await checkRateLimit(`ratings:${ip}`, 30, 60_000);
+  const rawIp = extractIp(req);
+  const ip = hashIp(rawIp);
+  const rl = await checkRateLimit(`ratings:${rawIp}`, 30, 60_000);
   if (!rl.allowed) {
     return NextResponse.json(
       { ok: false, error: "rate_limited" },
@@ -94,7 +95,8 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const ip = extractIp(req);
+  const rawIp = extractIp(req);
+  const ip = hashIp(rawIp);
   const url = new URL(req.url);
   const channelId = clip(url.searchParams.get("channelId"), MAX_TEXT_LEN);
   if (!channelId) {
@@ -126,7 +128,8 @@ export async function GET(req: Request) {
     const col = db.collection<RatingDoc>(RATINGS_COLLECTION);
 
     if (channelId) {
-      const ip = extractIp(req);
+      const rawIp = extractIp(req);
+  const ip = hashIp(rawIp);
       const [agg, mine] = await Promise.all([
         col
           .aggregate([

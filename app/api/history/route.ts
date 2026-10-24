@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getDb, HISTORY_COLLECTION } from "@/lib/db/mongo";
 import { isAuthenticated } from "@/lib/admin/auth";
-import { extractIp } from "@/lib/admin/ipUtils";
+import { extractIp, anonymizeIp } from "@/lib/admin/ipUtils";
+import { RETENTION } from "@/lib/db/mongo";
 import { checkRateLimit } from "@/lib/admin/rateLimit";
 import { logAudit } from "@/lib/admin/audit";
 
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 interface HistoryDoc {
   ip: string;
+  expireAt?: Date;
   channelId: string;
   channelName: string;
   country: string | null;
@@ -64,7 +66,8 @@ export async function POST(req: Request) {
   }
 
   const doc: HistoryDoc = {
-    ip,
+    ip: anonymizeIp(ip),
+    expireAt: new Date(Date.now() + RETENTION.history),
     channelId,
     channelName,
     country: clip(body.country, MAX_TEXT_LEN),

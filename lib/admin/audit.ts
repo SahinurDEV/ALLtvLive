@@ -1,9 +1,11 @@
 import { getDb, AUDIT_LOG_COLLECTION } from "@/lib/db/mongo";
-import { extractIp } from "./ipUtils";
+import { extractIp, anonymizeIp } from "./ipUtils";
+import { RETENTION } from "@/lib/db/mongo";
 
 interface AuditEntry {
   action: string;
   actorIp: string;
+  expireAt?: Date;
   actorUa: string | null;
   meta?: Record<string, unknown> | null;
   at: number;
@@ -34,7 +36,8 @@ export async function logAudit(
     if (!db) return;
     const entry: AuditEntry = {
       action,
-      actorIp: extractIp(req),
+      actorIp: anonymizeIp(extractIp(req)),
+      expireAt: new Date(Date.now() + RETENTION.audit),
       actorUa: req.headers.get("user-agent")?.slice(0, 300) || null,
       meta: safeMeta(meta),
       at: Date.now(),

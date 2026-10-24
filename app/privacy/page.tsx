@@ -85,8 +85,21 @@ export default function PrivacyPage() {
             featured list, and to broadcasters&apos; stream servers/CDNs (only
             when you play a channel). As with any internet app, your
             device&apos;s IP address is necessarily visible to the servers it
-            connects to in order to deliver data to you. We do not log, profile,
-            or associate this information with you.
+            connects to in order to deliver data to you. We do not profile or
+            associate this information with you.
+          </p>
+        </section>
+
+        <section className="space-y-3 mb-8">
+          <h2 className="text-xl font-semibold">What the website logs</h2>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            To show popular channels and find broken streams, the website records
+            which channel was played, when, your browser type, and a shortened IP
+            address with the last part removed (for example 203.0.113.0), which
+            is used only to estimate country and city. Stream reports and votes
+            are stored the same way; for votes we keep a one-way hash instead of
+            the IP. Play history is deleted automatically after 90 days, and
+            reports and admin logs after 180 days.
           </p>
         </section>
 
@@ -105,8 +118,8 @@ export default function PrivacyPage() {
           <p className="text-sm leading-relaxed text-muted-foreground">
             The App does not host, upload, cache, or redistribute any video
             content. All streams are delivered directly by their original
-            broadcasters. If you believe a stream infringes your rights, contact
-            us and we will remove it promptly.
+            broadcasters. If you believe a stream infringes your rights, see the
+            takedown process at /dmca and we will remove it promptly.
           </p>
         </section>
 
