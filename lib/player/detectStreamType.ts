@@ -15,6 +15,8 @@ export interface ResolvedSource {
   referrer: string | null;
   userAgent: string | null;
   youtubeId?: string;
+  /** true when an http:// URL was rewritten to https:// for an https page */
+  upgraded?: boolean;
 }
 
 const YOUTUBE_HOSTS = ["youtube.com", "www.youtube.com", "youtu.be", "m.youtube.com", "youtube-nocookie.com"];
@@ -71,8 +73,15 @@ export function buildSourceList(streams: Stream[]): ResolvedSource[] {
     .map((s) => {
       const type = detectStreamType(s.url);
       const youtubeId = type === "youtube" ? extractYouTubeId(s.url) || undefined : undefined;
+      // Browsers block http:// media on an https:// page (mixed content).
+      // Try the same URL over https instead; many servers support both.
+      const upgraded =
+        typeof window !== "undefined" &&
+        window.location.protocol === "https:" &&
+        s.url.startsWith("http://");
       return {
-        url: s.url,
+        url: upgraded ? "https://" + s.url.slice("http://".length) : s.url,
+        upgraded,
         type,
         quality: s.quality || null,
         referrer: s.referrer || null,
@@ -105,6 +114,8 @@ export function buildSourceList(streams: Stream[]): ResolvedSource[] {
   };
 
   return resolved.sort((a, b) => {
+    // Originally-https sources first: upgraded ones often fail.
+    if (a.upgraded !== b.upgraded) return a.upgraded ? 1 : -1;
     const r = rank(a.type) - rank(b.type);
     if (r !== 0) return r;
     return qualityScore(b.quality) - qualityScore(a.quality);
