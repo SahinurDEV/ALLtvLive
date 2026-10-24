@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { getSlimCatalog } from "@/lib/server/catalog";
 
 export const runtime = "nodejs";
+// Pre-rendered at build and regenerated hourly (ISR), so the CDN serves it.
+export const revalidate = 3600;
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return [{ name: "channels" }, { name: "streams" }, { name: "logos" }];
+}
 
 const NAMES = new Set(["channels", "streams", "logos"]);
 
@@ -18,10 +25,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ name: s
   try {
     const cat = await getSlimCatalog();
     const body = name === "channels" ? cat.channels : name === "streams" ? cat.streams : cat.logos;
-    return NextResponse.json(body, {
-      headers: { "cache-control": "public, s-maxage=3600, stale-while-revalidate=86400" },
-    });
+    return NextResponse.json(body);
   } catch {
-    return NextResponse.json({ error: "upstream_unavailable" }, { status: 502 });
+    return NextResponse.json(
+      { error: "upstream_unavailable" },
+      { status: 502, headers: { "cache-control": "no-store" } }
+    );
   }
 }
