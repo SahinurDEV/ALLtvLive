@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect } from "react";
 import Fuse from "fuse.js";
 import type {
   Channel,
@@ -15,7 +15,6 @@ import type {
   BroadcastChannel,
 } from "@/lib/types";
 import { fetcher } from "@/lib/api";
-import { generateViewerCount } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
 import { useBroadcastChannels } from "@/hooks/useBroadcastChannels";
 
@@ -187,7 +186,6 @@ export function useChannels() {
   }, [countries]);
 
   // Stable viewer counts
-  const viewerCountRef = useRef(new Map<string, number>());
 
   // Convert custom channels to ChannelWithMeta format
   const customEnriched = useMemo(() => {
@@ -206,7 +204,6 @@ export function useChannels() {
     if (!channels || !streams) return [...customEnriched, ...broadcastEnriched];
 
     const result: ChannelWithMeta[] = [];
-    const vcMap = viewerCountRef.current;
 
     for (const channel of channels) {
       if (channel.is_nsfw) continue;
@@ -218,10 +215,6 @@ export function useChannels() {
       // Filter or deprioritize broken channels
       if (hideBroken && brokenSet.has(channel.id)) continue;
 
-      if (!vcMap.has(channel.id)) {
-        vcMap.set(channel.id, generateViewerCount());
-      }
-
       const logoUrl = logoMap.get(channel.id) || null;
 
       result.push({
@@ -229,18 +222,19 @@ export function useChannels() {
         logo: logoUrl,
         streams: channelStreams,
         countryInfo: countryMap.get(channel.country),
-        viewerCount: vcMap.get(channel.id)!,
+        // No real-time audience tracking yet: keep 0 so the UI hides counts.
+        viewerCount: 0,
         isLive: true,
       });
     }
 
-    // Sort by viewer count, but push any broken channels to the bottom
+    // Sort by number of available streams, then name, but push any broken channels to the bottom
     // (they only reach here if hideBroken is false)
     result.sort((a, b) => {
       const aBroken = brokenSet.has(a.id) ? 1 : 0;
       const bBroken = brokenSet.has(b.id) ? 1 : 0;
       if (aBroken !== bBroken) return aBroken - bBroken;
-      return b.viewerCount - a.viewerCount;
+      return b.streams.length - a.streams.length || a.name.localeCompare(b.name);
     });
 
     // Order: user's own custom channels first, then admin broadcast, then catalog

@@ -89,11 +89,13 @@ export const ChannelCard = memo(function ChannelCard({
             />
           )}
 
-          {/* Viewer count */}
-          <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full">
-            <Users className="h-3 w-3" />
-            {formatViewerCount(channel.viewerCount)}
-          </div>
+          {/* Viewer count (only shown when real data exists) */}
+          {channel.viewerCount > 0 && (
+            <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full">
+              <Users className="h-3 w-3" />
+              {formatViewerCount(channel.viewerCount)}
+            </div>
+          )}
 
           {/* Play overlay */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">

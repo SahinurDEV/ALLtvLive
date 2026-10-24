@@ -1080,10 +1080,12 @@ export function InlinePlayer() {
                   {currentChannel.countryInfo.flag} {currentChannel.countryInfo.name}
                 </span>
               )}
-              <span className="flex items-center gap-1.5">
-                <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-neon/70 shrink-0" />
-                {formatViewerCount(currentChannel.viewerCount)} watching
-              </span>
+              {currentChannel.viewerCount > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-neon/70 shrink-0" />
+                  {formatViewerCount(currentChannel.viewerCount)} watching
+                </span>
+              )}
             </div>
 
             {currentChannel.network && (

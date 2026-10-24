@@ -576,11 +576,13 @@ export function PlayerModal() {
                             ? `${currentChannel.countryInfo.flag} ${currentChannel.countryInfo.name}`
                             : currentChannel.country}
                         </p>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          {formatViewerCount(currentChannel.viewerCount)}{" "}
-                          watching
-                        </p>
+                        {currentChannel.viewerCount > 0 && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            {formatViewerCount(currentChannel.viewerCount)}{" "}
+                            watching
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -809,9 +811,11 @@ function SidebarChannelItem({
           </div>
         )}
         {/* Viewer count */}
-        <div className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1 py-0.5 rounded">
-          {formatViewerCount(channel.viewerCount)}
-        </div>
+        {channel.viewerCount > 0 && (
+          <div className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1 py-0.5 rounded">
+            {formatViewerCount(channel.viewerCount)}
+          </div>
+        )}
         {/* Play hover overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
           <Play className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="white" />
