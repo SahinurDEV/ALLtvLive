@@ -17,20 +17,51 @@ declare global {
 
 function connect(): Promise<MongoClient> | null {
   if (!uri) return null;
-  if (process.env.NODE_ENV === "development") {
-    if (!global._mongoClientPromise) {
-      global._mongoClientPromise = new MongoClient(uri).connect();
-    }
-    return global._mongoClientPromise;
+  // Reuse one client per server instance (dev and prod). Creating a new
+  // MongoClient per request leaks connections on serverless platforms.
+  if (!global._mongoClientPromise) {
+    global._mongoClientPromise = new MongoClient(uri).connect();
   }
-  return new MongoClient(uri).connect();
+  return global._mongoClientPromise;
+}
+
+const DAY = 24 * 60 * 60 * 1000;
+
+/** How long personal-ish data is kept before MongoDB deletes it (TTL). */
+export const RETENTION = {
+  history: 90 * DAY,
+  reports: 180 * DAY,
+  audit: 180 * DAY,
+  ipGeo: 30 * DAY,
+} as const;
+
+let indexesReady: Promise<void> | null = null;
+
+function ensureIndexes(db: Db): Promise<void> {
+  if (!indexesReady) {
+    const ttl = { expireAfterSeconds: 0 };
+    indexesReady = Promise.all(
+      [HISTORY_COLLECTION, REPORTS_COLLECTION, AUDIT_LOG_COLLECTION, IP_GEO_COLLECTION].map((c) =>
+        db.collection(c).createIndex({ expireAt: 1 }, ttl)
+      )
+    )
+      .then(() => undefined)
+      .catch((err) => {
+        indexesReady = null;
+        // eslint-disable-next-line no-console
+        console.warn("[mongo] could not create TTL indexes", err);
+      });
+  }
+  return indexesReady;
 }
 
 export async function getDb(): Promise<Db | null> {
   const promise = connect();
   if (!promise) return null;
   const client = await promise;
-  return client.db(dbName);
+  const db = client.db(dbName);
+  void ensureIndexes(db);
+  return db;
 }
 
 export const FEATURED_COLLECTION = "featuredChannels";

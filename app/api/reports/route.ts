@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getDb, REPORTS_COLLECTION } from "@/lib/db/mongo";
 import { isAuthenticated } from "@/lib/admin/auth";
-import { extractIp } from "@/lib/admin/ipUtils";
+import { extractIp, anonymizeIp } from "@/lib/admin/ipUtils";
+import { RETENTION } from "@/lib/db/mongo";
 import { checkRateLimit } from "@/lib/admin/rateLimit";
 import { logAudit } from "@/lib/admin/audit";
 import { ObjectId } from "mongodb";
@@ -12,6 +13,7 @@ export const dynamic = "force-dynamic";
 interface ReportDoc {
   _id?: ObjectId;
   ip: string;
+  expireAt?: Date;
   channelId: string;
   channelName: string;
   reason: string;
@@ -77,7 +79,8 @@ export async function POST(req: Request) {
     if (!db) return NextResponse.json({ ok: false, error: "db_unavailable" }, { status: 503 });
     const col = db.collection<ReportDoc>(REPORTS_COLLECTION);
     await col.insertOne({
-      ip,
+      ip: anonymizeIp(ip),
+      expireAt: new Date(Date.now() + RETENTION.reports),
       channelId,
       channelName,
       reason,

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, STREAM_HEALTH_COLLECTION } from "@/lib/db/mongo";
 import { isAuthenticated } from "@/lib/admin/auth";
-import { extractIp } from "@/lib/admin/ipUtils";
+import { extractIp, anonymizeIp } from "@/lib/admin/ipUtils";
 import { checkRateLimit } from "@/lib/admin/rateLimit";
 
 export const runtime = "nodejs";
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
         $set: {
           channelName,
           ...timestamp,
-          lastReporterIp: ip,
+          lastReporterIp: anonymizeIp(ip),
           updatedAt: now,
         },
         $inc: inc,
