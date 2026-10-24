@@ -16,12 +16,9 @@ const securityHeaders = [
 
 const nextConfig = {
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**",
-      },
-    ],
+    // All logos are third-party URLs rendered with `unoptimized`; turning the
+    // optimizer off removes the /_next/image proxy for arbitrary hosts.
+    unoptimized: true,
   },
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],

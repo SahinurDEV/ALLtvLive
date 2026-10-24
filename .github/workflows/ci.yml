@@ -20,5 +20,4 @@ jobs:
       - name: Build
         run: npm run build
       - name: Audit production dependencies
-        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high
