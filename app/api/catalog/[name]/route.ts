@@ -25,7 +25,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ name: s
   try {
     const cat = await getSlimCatalog();
     const body = name === "channels" ? cat.channels : name === "streams" ? cat.streams : cat.logos;
-    return NextResponse.json(body);
+    return NextResponse.json(body, {
+      headers: {
+        // Explicit CDN caching for when the response is served by the function.
+        "vercel-cdn-cache-control": "max-age=3600, stale-while-revalidate=86400",
+        "cdn-cache-control": "max-age=3600, stale-while-revalidate=86400",
+      },
+    });
   } catch {
     return NextResponse.json(
       { error: "upstream_unavailable" },
