@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { checkPassword, issueSessionCookie } from "@/lib/admin/auth";
+import { checkPassword, checkTotp, issueSessionCookie } from "@/lib/admin/auth";
 import { logAudit } from "@/lib/admin/audit";
 import { checkRateLimit } from "@/lib/admin/rateLimit";
 import { extractIp } from "@/lib/admin/ipUtils";
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { password?: string } = {};
+  let body: { password?: string; code?: string } = {};
   try {
     body = await req.json();
   } catch {
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     );
   }
 
-  if (!checkPassword(body.password)) {
+  if (!checkPassword(body.password) || !checkTotp(body.code)) {
     await logAudit(req, "admin.login.fail");
     return NextResponse.json(
       { ok: false, error: "invalid_credentials" },
