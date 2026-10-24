@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { WatchApp } from "@/components/WatchApp";
+import { isBlocked } from "@/lib/blocklist";
 
 interface Props {
   params: Promise<{ channel: string }>;
@@ -78,5 +80,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ChannelPage({ params }: Props) {
   const { channel } = await params;
+  if (isBlocked(decodeURIComponent(channel))) notFound();
   return <WatchApp initialChannelId={channel} />;
 }

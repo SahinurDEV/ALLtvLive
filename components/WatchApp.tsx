@@ -473,6 +473,10 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
                       Public API
                     </a>
                     <span className="mx-2">·</span>
+                    <a href="/dmca" className="hover:text-neon transition-colors">
+                      Copyright &amp; Takedown
+                    </a>
+                    <span className="mx-2">·</span>
                     <a
                       href="https://github.com/SahinurDEV/ALLtvLive"
                       target="_blank"

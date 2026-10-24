@@ -17,6 +17,7 @@ import type {
 import { fetcher } from "@/lib/api";
 import { useAppStore } from "@/lib/store";
 import { useBroadcastChannels } from "@/hooks/useBroadcastChannels";
+import { isBlocked } from "@/lib/blocklist";
 
 const BASE_URL = "https://iptv-org.github.io/api";
 
@@ -206,7 +207,7 @@ export function useChannels() {
     const result: ChannelWithMeta[] = [];
 
     for (const channel of channels) {
-      if (channel.is_nsfw) continue;
+      if (channel.is_nsfw || isBlocked(channel.id)) continue;
 
       const channelStreams = streamMap.get(channel.id);
       // Skip channels with no streams at all

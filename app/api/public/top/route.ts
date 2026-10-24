@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb, HISTORY_COLLECTION } from "@/lib/db/mongo";
+import { isBlocked } from "@/lib/blocklist";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,7 +58,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(
       {
-        channels: results.map((r) => ({
+        channels: results.filter((r) => !isBlocked(String(r._id))).map((r) => ({
           channelId: String(r._id),
           channelName: String(r.channelName || r._id),
           plays: Number(r.plays) || 0,

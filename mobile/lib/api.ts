@@ -1,5 +1,6 @@
 import type { Channel, Stream, Country, ChannelWithMeta } from "./types";
 import { WEB_API_BASE_URL } from "./config";
+import { isBlocked } from "./blocklist";
 
 const BASE_URL = "https://iptv-org.github.io/api";
 
@@ -42,7 +43,7 @@ export async function loadCatalog(): Promise<CatalogData> {
 
     const enriched: ChannelWithMeta[] = [];
     for (const ch of channels) {
-      if (ch.is_nsfw) continue;
+      if (ch.is_nsfw || isBlocked(ch.id)) continue;
       const chStreams = streamMap.get(ch.id);
       if (!chStreams || chStreams.length === 0) continue;
       enriched.push({

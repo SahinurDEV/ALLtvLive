@@ -776,12 +776,15 @@ export default function LandingPage() {
             <span className="mx-1">·</span>
             <span>MIT licensed · powered by iptv-org</span>
           </div>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <Link href="/watch" className="hover:text-foreground transition-colors">
               Watch
             </Link>
             <Link href="/about" className="hover:text-foreground transition-colors">
               About
+            </Link>
+            <Link href="/dmca" className="hover:text-foreground transition-colors">
+              DMCA
             </Link>
             <a
               href="https://github.com/SahinurDEV/ALLtvLive"

@@ -61,7 +61,11 @@ export default function AboutPage() {
             All stream URLs are sourced from the public iptv-org catalog.
             Availability, licensing, and regional restrictions are controlled by
             each individual broadcaster. If you are a rights holder and believe
-            a stream should not be listed, please open an issue directly at{" "}
+            a stream should not be listed, please see our{" "}
+            <Link href="/dmca" className="text-neon hover:underline">
+              copyright &amp; takedown page
+            </Link>
+            . You can also open an issue at{" "}
             <a
               href="https://github.com/iptv-org/iptv"
               target="_blank"
