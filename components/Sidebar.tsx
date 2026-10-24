@@ -160,6 +160,14 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
                 </button>
               ))}
 
+              <a
+                href="/multiview"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <LayoutGrid className="h-4 w-4 shrink-0" />
+                {t("nav.multiview")}
+              </a>
+
               {/* My Channels — opens unified centered modal */}
               <button
                 onClick={handleMyChannelsClick}

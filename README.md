@@ -212,3 +212,8 @@ ALLtvLive does not host or provide any video content. It aggregates publicly ava
 [GitHub](https://github.com/SahinurDEV/ALLtvLive) · [Live Demo](https://alltvlive.vercel.app) · [Report Bug](https://github.com/SahinurDEV/ALLtvLive/issues)
 
 </div>
+
+## Not yet available
+
+- **Android TV / Play Store release**: not done yet. It needs a Play Console account, and the Expo dependencies need upgrading (`npm ci` in `mobile/` currently fails with ERESOLVE).
+- **User accounts / cloud sync**: not built. Until then, go to Settings → Backup to export or import your favorites, history, custom channels and settings as a JSON file.
