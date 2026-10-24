@@ -112,7 +112,21 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
         .map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65))
         .join("");
 
-    fetch("https://ipapi.co/json/")
+    // 1) Our own endpoint (Vercel/Cloudflare edge headers, no third party).
+    // 2) Fall back to public IP lookup services when self-hosted.
+    fetch("/api/geo")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.ok && data.code) {
+          setUserCountry(data.code, data.name, codeToFlag(data.code));
+          return true;
+        }
+        return false;
+      })
+      .catch(() => false)
+      .then((done) => {
+        if (done) return;
+        return fetch("https://ipapi.co/json/")
       .then((res) => {
         if (!res.ok) throw new Error("ipapi failed");
         return res.json();
@@ -135,6 +149,7 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
             }
           })
           .catch(() => {});
+      });
       });
   }, [userCountry, setUserCountry]);
 
