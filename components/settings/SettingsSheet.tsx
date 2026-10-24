@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { KidsModeSection } from "@/components/settings/KidsModeSection";
 import { useT } from "@/lib/i18n";
 import { LanguagePicker } from "@/components/settings/LanguagePicker";
+import { DataBackup } from "@/components/settings/DataBackup";
 
 function ThemeChoice({
   active,
@@ -270,6 +271,7 @@ export function SettingsSheet() {
                     <Trash2 className="h-4 w-4" />
                     Clear watch history
                   </Button>
+                  <DataBackup />
                 </div>
               </section>
 
