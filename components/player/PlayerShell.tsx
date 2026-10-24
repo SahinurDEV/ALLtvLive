@@ -5,6 +5,7 @@ import { AlertTriangle, Loader2, Tv, RefreshCw, SkipForward, MessageSquareWarnin
 import { Button } from "@/components/ui/button";
 import type { PlayerPhase } from "@/lib/player/useUniversalPlayer";
 import type { ChannelWithMeta } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 interface PlayerShellProps {
   channel: ChannelWithMeta | null;
@@ -42,6 +43,7 @@ export const PlayerShell = forwardRef<HTMLVideoElement, PlayerShellProps>(
     const isLoading = phase === "loading";
     const isBuffering = phase === "buffering";
     const isError = phase === "error";
+  const t = useT();
 
     return (
       <div className="absolute inset-0 bg-black">
@@ -103,7 +105,7 @@ export const PlayerShell = forwardRef<HTMLVideoElement, PlayerShellProps>(
               </div>
               <div>
                 <p className="text-white font-semibold text-sm">
-                  This channel isn&apos;t available right now
+                  {t("player.unavailable")}
                 </p>
                 {errorMessage && (
                   <p className="text-gray-400 text-xs mt-1">{errorMessage}</p>
@@ -117,7 +119,7 @@ export const PlayerShell = forwardRef<HTMLVideoElement, PlayerShellProps>(
                   className="gap-1 text-xs h-8 px-3"
                 >
                   <RefreshCw className="h-3 w-3" />
-                  Retry
+                  {t("player.retry")}
                 </Button>
                 {sourceIndex + 1 < totalSources && (
                   <Button
@@ -127,7 +129,7 @@ export const PlayerShell = forwardRef<HTMLVideoElement, PlayerShellProps>(
                     className="gap-1 text-xs h-8 px-3"
                   >
                     <SkipForward className="h-3 w-3" />
-                    Try another source
+                    {t("player.trySource")}
                   </Button>
                 )}
                 {onReport && (

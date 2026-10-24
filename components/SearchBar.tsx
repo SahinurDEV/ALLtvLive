@@ -6,6 +6,7 @@ import { Search, X, Radio, CornerDownLeft, Clock, Flame } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAppStore } from "@/lib/store";
 import type { ChannelWithMeta } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 const MAX_RESULTS = 8;
 const MAX_SUGGESTIONS = 6;
@@ -39,6 +40,7 @@ interface Section {
 
 export function SearchBar() {
   const setSearch = useAppStore((s) => s.setSearch);
+  const t = useT();
   const searchValue = useAppStore((s) => s.filters.search);
   const allChannels = useAppStore((s) => s.allChannels);
   const historyIds = useAppStore((s) => s.historyIds);
@@ -83,8 +85,8 @@ export function SearchBar() {
       .slice(0, MAX_SUGGESTIONS);
 
     const sections: Section[] = [];
-    if (recent.length > 0) sections.push({ label: "Recently watched", icon: Clock, items: recent });
-    if (trending.length > 0) sections.push({ label: "Trending now", icon: Flame, items: trending });
+    if (recent.length > 0) sections.push({ label: t("search.recent"), icon: Clock, items: recent });
+    if (trending.length > 0) sections.push({ label: t("search.trending"), icon: Flame, items: trending });
     return sections;
   }, [trimmed, allChannels, historyIds]);
 
@@ -189,7 +191,7 @@ export function SearchBar() {
       <Input
         ref={inputRef}
         type="text"
-        placeholder="Search channels... (Ctrl+K)"
+        placeholder={t("search.placeholder")}
         value={localValue}
         onChange={(e) => handleChange(e.target.value)}
         onFocus={() => setDropdownOpen(true)}

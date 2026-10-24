@@ -8,6 +8,7 @@ import {
   Settings,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 
 export function MobileNav() {
   const {
@@ -20,6 +21,7 @@ export function MobileNav() {
     setSettingsOpen,
     userCountry,
   } = useAppStore();
+  const t = useT();
 
   const handleNav = (view: typeof activeView) => {
     setActiveView(view);
@@ -38,16 +40,16 @@ export function MobileNav() {
   };
 
   const items = [
-    { id: "home" as const, label: "Home", icon: Home },
-    { id: "countries" as const, label: "Browse", icon: Globe },
-    { id: "random" as const, label: "Random", icon: Shuffle },
+    { id: "home" as const, label: t("nav.home"), icon: Home },
+    { id: "countries" as const, label: t("nav.browse"), icon: Globe },
+    { id: "random" as const, label: t("nav.random"), icon: Shuffle },
     {
       id: "favorites" as const,
-      label: "Favorites",
+      label: t("nav.favorites"),
       icon: Heart,
       count: favorites.length,
     },
-    { id: "settings" as const, label: "Settings", icon: Settings },
+    { id: "settings" as const, label: t("nav.settings"), icon: Settings },
   ];
 
   return (
