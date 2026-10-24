@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb, STREAM_HEALTH_COLLECTION } from "@/lib/db/mongo";
+import { isBlocked } from "@/lib/blocklist";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export async function GET() {
       .find({}, { projection: { _id: 1, channelName: 1, successes: 1, failures: 1, lastSuccessAt: 1, lastFailureAt: 1, updatedAt: 1 } })
       .toArray();
 
-    const channels = rows.map((c) => {
+    const channels = rows.filter((c) => !isBlocked(String(c._id))).map((c) => {
       const successes = Number(c.successes) || 0;
       const failures = Number(c.failures) || 0;
       const total = successes + failures;
