@@ -33,10 +33,16 @@ Watch **10,000+** free live TV channels from around the world in one place.
 | **Responsive** | Fully responsive — mobile, tablet, and desktop |
 | **Dark/Light Theme** | Neon dark theme by default with light mode toggle |
 | **Rich Channel Info** | Network, owner, languages, launch date, website, stream quality |
+| **Smart Source Fallback** | Tries every stream of a channel, skips refused (403) sources, upgrades `http://` to `https://` |
+| **Admin Dashboard** | `/admin`: stream health, reports, ratings, watch analytics, featured channels (needs MongoDB) |
+| **Copyright & Takedown** | `/dmca` page, takedown issue template and a channel blocklist (`lib/blocklist.ts`) |
+| **SEO** | Real `robots.txt`, sitemap of every channel, canonical URLs, JSON-LD, proper 404s |
 
 ## 🖼️ Screenshots
 
-> Visit the live app to see ALLtvLive in action.
+| Desktop | Mobile (375 px) |
+|---|---|
+| <img src="docs/screenshots/desktop-watch.png" alt="ALLtvLive desktop player" width="560"> | <img src="docs/screenshots/mobile-watch.png" alt="ALLtvLive on a phone" width="220"> |
 
 ## 🛠️ Tech Stack
 
@@ -84,7 +90,7 @@ alltvlive/
 
 ### Prerequisites
 
-- **Node.js** 18+
+- **Node.js** 20+
 - **npm** or **yarn**
 
 ### Installation
@@ -119,7 +125,18 @@ The easiest way to deploy ALLtvLive:
 3. Import your repository
 4. Click **Deploy**
 
-No environment variables needed — the app uses public APIs.
+The public site needs no environment variables. The optional ones turn on extra features:
+
+| Variable | Purpose |
+|---|---|
+| `MONGODB_URI`, `MONGODB_DB` | Admin dashboard, stream health, reports, ratings, history |
+| `ADMIN_PASSWORD`, `SESSION_SECRET` | Admin sign-in (`SESSION_SECRET`: 32+ random hex chars) |
+| `ADMIN_TOTP_SECRET` | Optional 6-digit authenticator code at admin sign-in |
+| `IP_HASH_SALT` | Salt for hashed voter IPs (defaults to `SESSION_SECRET`) |
+| `NEXT_PUBLIC_SITE_URL` | Canonical URL for robots.txt and the sitemap (default `https://alltvlive.vercel.app`) |
+| `NEXT_PUBLIC_ADSENSE_CLIENT_ID` | Google AdSense publisher ID; ads render only when set |
+
+See `.env.example`.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/SahinurDEV/ALLtvLive)
 
@@ -136,7 +153,17 @@ ALLtvLive uses the public APIs provided by [iptv-org](https://github.com/iptv-or
 | `categories.json` | Channel categories |
 | `languages.json` | Language list |
 
-All data is fetched client-side and cached for 10 minutes via SWR.
+The server trims these into `/api/catalog/{channels,streams,logos}`, which hold only playable, non-blocked channels and one logo each (about 1 MB gzipped instead of about 17 MB), regenerated hourly. If that fails, the browser falls back to iptv-org directly.
+
+## 🧪 Tests and CI
+
+GitHub Actions runs a typecheck, a production build, `npm audit` and Playwright smoke tests at desktop and 375 px on every pull request.
+
+```bash
+npm run build
+npx playwright install chromium
+npm run test:e2e
+```
 
 ## ⌨️ Keyboard Shortcuts
 
@@ -169,7 +196,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## ⚠️ Disclaimer
 
-ALLtvLive does not host or provide any video content. It aggregates publicly available IPTV streams indexed by the [iptv-org](https://github.com/iptv-org/iptv) project. All streams are provided by third parties and may be subject to their respective terms of service.
+ALLtvLive does not host or provide any video content. It aggregates publicly available IPTV streams indexed by the [iptv-org](https://github.com/iptv-org/iptv) project. All streams are provided by third parties and may be subject to their respective terms of service. A listing does not mean anyone has a license for it. Rights holders can request removal at [/dmca](https://alltvlive.vercel.app/dmca). The MIT license covers this app's code only, not any broadcast content.
 
 ---
 
