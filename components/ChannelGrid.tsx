@@ -52,10 +52,12 @@ function ChannelListRow({ channel }: { channel: ChannelWithMeta }) {
           )}
         </div>
       </div>
-      <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-        <Users className="h-3 w-3" />
-        {formatViewerCount(channel.viewerCount)}
-      </div>
+      {channel.viewerCount > 0 && (
+        <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+          <Users className="h-3 w-3" />
+          {formatViewerCount(channel.viewerCount)}
+        </div>
+      )}
     </button>
   );
 }
