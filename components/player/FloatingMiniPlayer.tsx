@@ -33,7 +33,8 @@ export function FloatingMiniPlayer() {
           const entry = entries[0];
           setVisible(!entry.isIntersecting);
         },
-        { threshold: 0, rootMargin: "0px 0px -80% 0px" }
+        // Show only once the player has scrolled fully above the navbar.
+        { threshold: 0, rootMargin: "-56px 0px 0px 0px" }
       );
       observer.observe(el);
       observerRef.current = observer;
