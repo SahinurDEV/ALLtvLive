@@ -13,8 +13,7 @@ import {
   ChevronDown,
   Tv,
   Radio,
-  Plus,
-} from "lucide-react";
+  Plus, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -159,6 +158,14 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
                   )}
                 </button>
               ))}
+
+              <a
+                href="/sports"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <Trophy className="h-4 w-4 shrink-0" />
+                {t("nav.sports")}
+              </a>
 
               <a
                 href="/multiview"
