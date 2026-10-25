@@ -422,9 +422,12 @@ export function useUniversalPlayer({
       return;
     }
     let best = -1;
+    let lowest = -1;
     hls.levels.forEach((l, i) => {
       if (l.height && l.height <= cap && (best < 0 || l.height > hls.levels[best].height)) best = i;
+      if (l.height && (lowest < 0 || l.height < hls.levels[lowest].height)) lowest = i;
     });
+    if (best < 0) best = lowest;
     hls.autoLevelCapping = best;
   }
 

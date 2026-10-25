@@ -111,6 +111,10 @@ const en = {
   "home.daypart.afternoon": "Afternoon picks",
   "home.daypart.evening": "Tonight: sports, movies and more",
   "home.daypart.night": "Late night: movies and music",
+  "player.pip": "Picture-in-picture",
+  "player.audioOnly": "Audio only (radio mode)",
+  "player.bgPlay": "Keep playing in background",
+  "player.listening": "Audio only. Video is hidden to save data",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -216,6 +220,10 @@ const bn: Record<MessageKey, string> = {
   "home.daypart.afternoon": "দুপুরের বাছাই",
   "home.daypart.evening": "আজ সন্ধ্যায়: খেলা, সিনেমা আর আরও",
   "home.daypart.night": "গভীর রাত: সিনেমা আর গান",
+  "player.pip": "পিকচার-ইন-পিকচার",
+  "player.audioOnly": "শুধু অডিও (রেডিও মোড)",
+  "player.bgPlay": "ব্যাকগ্রাউন্ডে চালু রাখুন",
+  "player.listening": "শুধু অডিও চলছে। ডেটা বাঁচাতে ভিডিও লুকানো",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };
