@@ -1,6 +1,7 @@
 "use client";
 
 import { rankChannels } from "@/lib/search/smartSearch";
+import { VoiceSearchButton } from "@/components/VoiceSearchButton";
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import Image from "next/image";
@@ -179,11 +180,17 @@ export function SearchBar() {
         onChange={(e) => handleChange(e.target.value)}
         onFocus={() => setDropdownOpen(true)}
         onKeyDown={handleKeyDown}
-        className="pl-9 pr-9 bg-secondary/50 border-border/50 focus:border-neon/50 focus:ring-neon/20"
+        className="pl-9 pr-16 bg-secondary/50 border-border/50 focus:border-neon/50 focus:ring-neon/20"
         aria-label="Search channels"
         aria-expanded={showDropdown}
         aria-autocomplete="list"
         role="combobox"
+      />
+      <VoiceSearchButton
+        onResult={(text) => {
+          handleChange(text);
+          inputRef.current?.focus();
+        }}
       />
       {localValue && (
         <button

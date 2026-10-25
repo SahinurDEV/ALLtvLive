@@ -141,6 +141,10 @@ const en = {
   "card.unstable": "Unstable",
   "card.rating": "{pct}% of viewers liked this",
   "home.newlyAdded": "Newly added",
+  "voice.start": "Search by voice",
+  "voice.stop": "Stop listening",
+  "voice.denied": "Microphone permission was denied",
+  "voice.failed": "Couldn't hear that. Try again",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -276,6 +280,10 @@ const bn: Record<MessageKey, string> = {
   "card.unstable": "অস্থির",
   "card.rating": "{pct}% দর্শক পছন্দ করেছেন",
   "home.newlyAdded": "নতুন যোগ হয়েছে",
+  "voice.start": "কথা বলে খুঁজুন",
+  "voice.stop": "শোনা বন্ধ করুন",
+  "voice.denied": "মাইক্রোফোনের অনুমতি দেওয়া হয়নি",
+  "voice.failed": "বুঝতে পারিনি। আবার চেষ্টা করুন",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };
