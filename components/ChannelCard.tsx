@@ -2,7 +2,8 @@
 
 import { memo, useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Play, Heart, Users, Radio, ShieldCheck, AlertTriangle, ThumbsUp } from "lucide-react";
+import { Play, Heart, Users, Radio, ShieldCheck, AlertTriangle, ThumbsUp, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 import { useChannelInsights } from "@/hooks/useChannelInsights";
 import { useT } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,8 @@ export const ChannelCard = memo(function ChannelCard({
   const favorites = useAppStore((s) => s.favorites);
   const isFav = favorites.includes(channel.id);
   const t = useT();
+  const hideChannel = useAppStore((s) => s.hideChannel);
+  const unhideChannel = useAppStore((s) => s.unhideChannel);
   const insights = useChannelInsights();
   const reliability = insights.reliability[channel.id];
   const rating = insights.rating[channel.id] as number | undefined;
@@ -111,6 +114,24 @@ export const ChannelCard = memo(function ChannelCard({
               </div>
             </div>
           </div>
+
+          {/* Hide button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute bottom-2 right-11 h-8 w-8 bg-black/50 backdrop-blur-sm hover:bg-black/70 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              hideChannel(channel.id);
+              toast(t("hide.done", { name: channel.name }), {
+                action: { label: t("hide.undo"), onClick: () => unhideChannel(channel.id) },
+              });
+            }}
+            aria-label={t("hide.this")}
+            title={t("hide.this")}
+          >
+            <EyeOff className="h-4 w-4 text-white" />
+          </Button>
 
           {/* Favorite button */}
           <Button

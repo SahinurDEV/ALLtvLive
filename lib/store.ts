@@ -135,6 +135,10 @@ interface AppState {
   toggleFavorite: (channelId: string) => void;
   isFavorite: (channelId: string) => boolean;
   reorderFavorites: (ids: string[]) => void;
+  hiddenChannelIds: string[];
+  hideChannel: (channelId: string) => void;
+  unhideChannel: (channelId: string) => void;
+  clearHiddenChannels: () => void;
   favoriteGroups: FavoriteGroup[];
   setFavoriteGroups: (groups: FavoriteGroup[]) => void;
 
@@ -219,6 +223,28 @@ interface AppState {
   closeCustomDialog: () => void;
 }
 
+const HIDDEN_KEY = "alltvlive-hidden-channels";
+
+function loadList(base: string): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(profileKey(base));
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveList(base: string, list: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(profileKey(base), JSON.stringify(list));
+  } catch {
+    // ignore
+  }
+}
+
 function loadFavorites(): string[] {
   if (typeof window === "undefined") return [];
   try {
@@ -269,7 +295,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   _favoritesHydrated: false,
   hydrateFavorites: () => {
     if (get()._favoritesHydrated) return;
-    set({ favorites: loadFavorites(), favoriteGroups: loadGroups(), _favoritesHydrated: true });
+    set({
+      favorites: loadFavorites(),
+      favoriteGroups: loadGroups(),
+      hiddenChannelIds: loadList(HIDDEN_KEY),
+      _favoritesHydrated: true,
+    });
   },
   toggleFavorite: (channelId) => {
     const { favorites } = get();
@@ -283,6 +314,23 @@ export const useAppStore = create<AppState>((set, get) => ({
   reorderFavorites: (ids) => {
     saveFavorites(ids);
     set({ favorites: ids });
+  },
+  hiddenChannelIds: [],
+  hideChannel: (channelId) => {
+    const cur = get().hiddenChannelIds;
+    if (cur.includes(channelId)) return;
+    const next = [...cur, channelId];
+    saveList(HIDDEN_KEY, next);
+    set({ hiddenChannelIds: next });
+  },
+  unhideChannel: (channelId) => {
+    const next = get().hiddenChannelIds.filter((id) => id !== channelId);
+    saveList(HIDDEN_KEY, next);
+    set({ hiddenChannelIds: next });
+  },
+  clearHiddenChannels: () => {
+    saveList(HIDDEN_KEY, []);
+    set({ hiddenChannelIds: [] });
   },
   favoriteGroups: [],
   setFavoriteGroups: (groups) => {

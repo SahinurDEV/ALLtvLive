@@ -145,6 +145,12 @@ const en = {
   "voice.stop": "Stop listening",
   "voice.denied": "Microphone permission was denied",
   "voice.failed": "Couldn't hear that. Try again",
+  "hide.this": "Hide this channel",
+  "hide.done": "{name} hidden",
+  "hide.undo": "Undo",
+  "hide.settingsTitle": "Hidden channels",
+  "hide.count": "{n} hidden",
+  "hide.showAll": "Show all again",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -284,6 +290,12 @@ const bn: Record<MessageKey, string> = {
   "voice.stop": "শোনা বন্ধ করুন",
   "voice.denied": "মাইক্রোফোনের অনুমতি দেওয়া হয়নি",
   "voice.failed": "বুঝতে পারিনি। আবার চেষ্টা করুন",
+  "hide.this": "এই চ্যানেলটি লুকান",
+  "hide.done": "{name} লুকানো হয়েছে",
+  "hide.undo": "ফিরিয়ে আনুন",
+  "hide.settingsTitle": "লুকানো চ্যানেল",
+  "hide.count": "{n}টি লুকানো",
+  "hide.showAll": "সব আবার দেখান",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };

@@ -72,6 +72,8 @@ export function SettingsSheet() {
   const t = useT();
   const setOpen = useAppStore((s) => s.setSettingsOpen);
   const settings = useAppStore((s) => s.settings);
+  const hiddenCount = useAppStore((s) => s.hiddenChannelIds.length);
+  const clearHiddenChannels = useAppStore((s) => s.clearHiddenChannels);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const clearWatchHistory = useAppStore((s) => s.clearWatchHistory);
   const favorites = useAppStore((s) => s.favorites);
@@ -177,6 +179,20 @@ export function SettingsSheet() {
                   />
                 </label>
               </section>
+
+              {hiddenCount > 0 && (
+                <section>
+                  <div className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border border-border/50">
+                    <div className="text-sm">
+                      <div className="font-medium">{t("hide.settingsTitle")}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{t("hide.count", { n: hiddenCount })}</div>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={clearHiddenChannels} data-testid="unhide-all">
+                      {t("hide.showAll")}
+                    </Button>
+                  </div>
+                </section>
+              )}
 
               {/* Channel reliability */}
               <section>
