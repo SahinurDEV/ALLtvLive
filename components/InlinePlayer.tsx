@@ -128,7 +128,6 @@ export function InlinePlayer() {
 
   const isPlaying = phase === "playing";
   const isPaused = phase === "paused";
-  const isError = phase === "error";
 
   const isFav = currentChannel ? favorites.includes(currentChannel.id) : false;
 
@@ -187,18 +186,37 @@ export function InlinePlayer() {
     return () => clearInterval(iv);
   }, [sleepDeadline, videoRef]);
 
+  // Where the current channel sits in the list. A channel that just failed can
+  // drop out of the list (hide broken channels), so remember its last position.
+  const lastIdxRef = useRef(0);
+  const channelPos = useMemo(() => {
+    if (!currentChannel || allChannels.length === 0) return null;
+    const idx = allChannels.findIndex((ch) => ch.id === currentChannel.id);
+    if (idx !== -1) {
+      lastIdxRef.current = idx;
+      return { idx, inList: true };
+    }
+    return { idx: Math.min(lastIdxRef.current, allChannels.length - 1), inList: false };
+  }, [currentChannel, allChannels]);
+
+  const neighborIndex = useCallback(
+    (direction: "next" | "prev") => {
+      if (!channelPos) return -1;
+      const n = allChannels.length;
+      const { idx, inList } = channelPos;
+      if (direction === "next") return inList ? (idx + 1) % n : idx % n;
+      return (idx - 1 + n) % n;
+    },
+    [channelPos, allChannels.length]
+  );
+
   const navigateChannel = useCallback(
     (direction: "next" | "prev") => {
-      if (!currentChannel || allChannels.length === 0) return;
-      const idx = allChannels.findIndex((ch) => ch.id === currentChannel.id);
-      if (idx === -1) return;
-      const newIdx =
-        direction === "next"
-          ? (idx + 1) % allChannels.length
-          : (idx - 1 + allChannels.length) % allChannels.length;
-      openPlayer(allChannels[newIdx]);
+      const i = neighborIndex(direction);
+      if (i < 0) return;
+      openPlayer(allChannels[i]);
     },
-    [currentChannel, allChannels, openPlayer]
+    [neighborIndex, allChannels, openPlayer]
   );
 
   // Mini guide strip: shown briefly after every zap so viewers see where they are.
@@ -219,17 +237,14 @@ export function InlinePlayer() {
   );
   const playerHoverRef = useRef(false);
   const neighbors = useMemo(() => {
-    if (!currentChannel || allChannels.length < 2) return null;
-    const idx = allChannels.findIndex((ch) => ch.id === currentChannel.id);
-    if (idx === -1) return null;
-    const n = allChannels.length;
+    if (!currentChannel || !channelPos || allChannels.length < 2) return null;
     return {
-      prev: allChannels[(idx - 1 + n) % n],
-      next: allChannels[(idx + 1) % n],
-      position: idx + 1,
-      total: n,
+      prev: allChannels[neighborIndex("prev")],
+      next: allChannels[neighborIndex("next")],
+      position: channelPos.idx + 1,
+      total: allChannels.length,
     };
-  }, [currentChannel, allChannels]);
+  }, [currentChannel, channelPos, allChannels, neighborIndex]);
 
   // "Last channel" (like a TV remote's recall button)
   const prevChannelRef = useRef<ChannelWithMeta | null>(null);
@@ -269,12 +284,20 @@ export function InlinePlayer() {
     }
   }, [videoRef]);
 
-  // Auto-next on error
+  // Remember the auto-skip choice between visits.
   useEffect(() => {
-    if (!autoNext || !isError) return;
-    const t = setTimeout(() => navigateChannel("next"), 3000);
-    return () => clearTimeout(t);
-  }, [autoNext, isError, navigateChannel]);
+    setAutoNext(localStorage.getItem("alltvlive-autoskip") === "1");
+  }, []);
+  const toggleAutoNext = useCallback(() => {
+    setAutoNext((v) => {
+      try {
+        localStorage.setItem("alltvlive-autoskip", v ? "0" : "1");
+      } catch {
+        // ignore
+      }
+      return !v;
+    });
+  }, []);
 
   const togglePlayPause = useCallback(() => {
     if (!videoRef.current) return;
@@ -616,7 +639,10 @@ export function InlinePlayer() {
           }}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          onFocus={flashGuide}
+          onFocus={(e) => {
+            // Keyboard / remote focus only, not mouse or touch clicks.
+            if (e.target === e.currentTarget && e.currentTarget.matches(":focus-visible")) flashGuide();
+          }}
           tabIndex={0}
           aria-label={t("zap.hint")}
           style={{ touchAction: "pinch-zoom" }}
@@ -634,6 +660,9 @@ export function InlinePlayer() {
             onTryNext={tryNextSource}
             onReport={() => openReportDialog(currentChannel.id)}
             onVideoClick={togglePlayPause}
+            onSkipNext={neighbors ? () => zap("next") : undefined}
+            nextChannelName={neighbors?.next.name}
+            autoSkip={autoNext}
           />
 
           {/* Watch time badge — top-left, always visible when playing */}
@@ -976,9 +1005,9 @@ export function InlinePlayer() {
                               />
                               <ExtrasRow
                                 icon={<Zap className="h-3.5 w-3.5 text-neon" />}
-                                label="Auto-play next on error"
+                                label={t("player.autoSkip")}
                                 active={autoNext}
-                                onClick={() => setAutoNext((v) => !v)}
+                                onClick={toggleAutoNext}
                               />
                               <ExtrasRow
                                 icon={<Camera className="h-3.5 w-3.5 text-blue-400" />}
@@ -1072,7 +1101,7 @@ export function InlinePlayer() {
           )}
 
           {/* Mini guide strip: previous / current / next channel */}
-          {neighbors && !isYouTube && (
+          {neighbors && !isYouTube && phase !== "error" && (
             <MiniGuideStrip
               visible={guideVisible}
               prev={neighbors.prev}

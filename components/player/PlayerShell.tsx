@@ -1,7 +1,9 @@
 "use client";
 
-import { forwardRef, type RefObject } from "react";
-import { AlertTriangle, Loader2, Tv, RefreshCw, SkipForward, MessageSquareWarning } from "lucide-react";
+import { forwardRef, useEffect, useState, type RefObject } from "react";
+import { AlertTriangle, Loader2, Tv, RefreshCw, SkipForward, MessageSquareWarning, ChevronsRight, Check, Flag } from "lucide-react";
+import { toast } from "sonner";
+import { reportDeadChannel, wasReportedRecently } from "@/lib/player/reportDead";
 import { Button } from "@/components/ui/button";
 import type { PlayerPhase } from "@/lib/player/useUniversalPlayer";
 import type { ChannelWithMeta } from "@/lib/types";
@@ -19,7 +21,114 @@ interface PlayerShellProps {
   onTryNext: () => void;
   onReport?: () => void;
   onVideoClick?: () => void;
+  /** Offer "Next channel" in the error overlay. */
+  onSkipNext?: () => void;
+  nextChannelName?: string;
+  /** When true, skip to the next channel automatically after a countdown. */
+  autoSkip?: boolean;
   children?: React.ReactNode;
+}
+
+const AUTO_SKIP_SECONDS = 5;
+
+/** Countdown + one-tap report shown once every source of a channel has failed. */
+function DeadChannelActions({
+  channel,
+  onSkipNext,
+  nextChannelName,
+  autoSkip,
+  onReport,
+}: {
+  channel: ChannelWithMeta | null;
+  onSkipNext?: () => void;
+  nextChannelName?: string;
+  autoSkip?: boolean;
+  onReport?: () => void;
+}) {
+  const t = useT();
+  const [remaining, setRemaining] = useState<number | null>(autoSkip && onSkipNext ? AUTO_SKIP_SECONDS : null);
+  const [reportState, setReportState] = useState<"idle" | "sending" | "done">(
+    channel && wasReportedRecently(channel.id) ? "done" : "idle"
+  );
+
+  useEffect(() => {
+    if (remaining === null || !onSkipNext) return;
+    if (remaining <= 0) {
+      onSkipNext();
+      return;
+    }
+    const id = setTimeout(() => setRemaining((r) => (r === null ? null : r - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [remaining, onSkipNext]);
+
+  const report = async () => {
+    if (!channel || reportState !== "idle") return;
+    setReportState("sending");
+    const res = await reportDeadChannel(channel.id, channel.name);
+    if (res === "ok") {
+      setReportState("done");
+      toast.success(t("player.reported"));
+    } else {
+      setReportState("idle");
+      toast.error(t(res === "rate_limited" ? "player.reportRateLimited" : "player.reportFailed"));
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-2 w-full">
+      {onSkipNext && (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button variant="neon" size="sm" onClick={onSkipNext} className="gap-1 text-xs h-8 px-3" data-testid="skip-next">
+            <ChevronsRight className="h-3.5 w-3.5" />
+            {t("player.nextChannel")}
+          </Button>
+          {remaining !== null && (
+            <span className="text-[11px] text-white/60" aria-live="polite">
+              {t("player.skippingIn")
+                .replace("{name}", nextChannelName || t("player.nextChannel"))
+                .replace("{s}", String(remaining))}
+              <button type="button" onClick={() => setRemaining(null)} className="ml-2 underline hover:text-white">
+                {t("player.cancel")}
+              </button>
+            </span>
+          )}
+        </div>
+      )}
+      {channel && (
+        <div className="flex flex-wrap items-center justify-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={report}
+            disabled={reportState !== "idle"}
+            className="gap-1 text-xs h-8 px-3 text-gray-300 hover:text-white"
+            data-testid="report-dead"
+          >
+            {reportState === "done" ? (
+              <Check className="h-3 w-3 text-neon" />
+            ) : reportState === "sending" ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Flag className="h-3 w-3" />
+            )}
+            {reportState === "done" ? t("player.reported") : t("player.reportDead")}
+          </Button>
+          {onReport && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onReport}
+              className="h-8 w-8 text-gray-500 hover:text-white"
+              aria-label="Report with details"
+              title="Report with details"
+            >
+              <MessageSquareWarning className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export const PlayerShell = forwardRef<HTMLVideoElement, PlayerShellProps>(
@@ -36,6 +145,9 @@ export const PlayerShell = forwardRef<HTMLVideoElement, PlayerShellProps>(
       onTryNext,
       onReport,
       onVideoClick,
+      onSkipNext,
+      nextChannelName,
+      autoSkip,
       children,
     },
     videoRef
@@ -98,9 +210,9 @@ export const PlayerShell = forwardRef<HTMLVideoElement, PlayerShellProps>(
 
         {/* Error overlay */}
         {isError && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/95 px-4">
-            <div className="flex flex-col items-center gap-3 text-center max-w-sm">
-              <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/95 px-3 py-2 overflow-y-auto" data-testid="player-error">
+            <div className="flex flex-col items-center gap-1.5 sm:gap-3 text-center max-w-sm m-auto">
+              <div className="hidden sm:flex w-12 h-12 rounded-full bg-yellow-500/10 items-center justify-center">
                 <AlertTriangle className="h-6 w-6 text-yellow-500" />
               </div>
               <div>
@@ -108,12 +220,12 @@ export const PlayerShell = forwardRef<HTMLVideoElement, PlayerShellProps>(
                   {t("player.unavailable")}
                 </p>
                 {errorMessage && (
-                  <p className="text-gray-400 text-xs mt-1">{errorMessage}</p>
+                  <p className="text-gray-400 text-[11px] sm:text-xs mt-0.5 line-clamp-2">{errorMessage}</p>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2 justify-center pt-1">
+              <div className="flex flex-wrap gap-2 justify-center">
                 <Button
-                  variant="neon"
+                  variant="outline"
                   size="sm"
                   onClick={onRetry}
                   className="gap-1 text-xs h-8 px-3"
@@ -132,18 +244,20 @@ export const PlayerShell = forwardRef<HTMLVideoElement, PlayerShellProps>(
                     {t("player.trySource")}
                   </Button>
                 )}
-                {onReport && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onReport}
-                    className="gap-1 text-xs h-8 px-3 text-gray-400 hover:text-white"
-                  >
-                    <MessageSquareWarning className="h-3 w-3" />
-                    Report
-                  </Button>
-                )}
               </div>
+              {totalSources > 1 && sourceIndex + 1 >= totalSources && (
+                <p className="text-[10px] text-white/40">
+                  {t("player.triedAll").replace("{n}", String(totalSources))}
+                </p>
+              )}
+              <DeadChannelActions
+                key={channel?.id}
+                channel={channel}
+                onSkipNext={onSkipNext}
+                nextChannelName={nextChannelName}
+                autoSkip={autoSkip}
+                onReport={onReport}
+              />
             </div>
           </div>
         )}
