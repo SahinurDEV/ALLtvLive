@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { profileKey } from "./profiles";
+import { loadGroups, saveGroups, type FavoriteGroup } from "./favoriteGroups";
 import type { ChannelWithMeta, CustomChannel, FilterState } from "./types";
 import {
   loadHistory,
@@ -92,6 +94,9 @@ interface AppState {
   hydrateFavorites: () => void;
   toggleFavorite: (channelId: string) => void;
   isFavorite: (channelId: string) => boolean;
+  reorderFavorites: (ids: string[]) => void;
+  favoriteGroups: FavoriteGroup[];
+  setFavoriteGroups: (groups: FavoriteGroup[]) => void;
 
   // Filters
   filters: FilterState;
@@ -177,7 +182,7 @@ interface AppState {
 function loadFavorites(): string[] {
   if (typeof window === "undefined") return [];
   try {
-    const stored = localStorage.getItem("alltvlive-favorites");
+    const stored = localStorage.getItem(profileKey("alltvlive-favorites"));
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
@@ -186,7 +191,11 @@ function loadFavorites(): string[] {
 
 function saveFavorites(favorites: string[]) {
   if (typeof window === "undefined") return;
-  localStorage.setItem("alltvlive-favorites", JSON.stringify(favorites));
+  try {
+    localStorage.setItem(profileKey("alltvlive-favorites"), JSON.stringify(favorites));
+  } catch {
+    // ignore
+  }
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -206,7 +215,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   _favoritesHydrated: false,
   hydrateFavorites: () => {
     if (get()._favoritesHydrated) return;
-    set({ favorites: loadFavorites(), _favoritesHydrated: true });
+    set({ favorites: loadFavorites(), favoriteGroups: loadGroups(), _favoritesHydrated: true });
   },
   toggleFavorite: (channelId) => {
     const { favorites } = get();
@@ -217,6 +226,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ favorites: newFavorites });
   },
   isFavorite: (channelId) => get().favorites.includes(channelId),
+  reorderFavorites: (ids) => {
+    saveFavorites(ids);
+    set({ favorites: ids });
+  },
+  favoriteGroups: [],
+  setFavoriteGroups: (groups) => {
+    saveGroups(groups);
+    set({ favoriteGroups: groups });
+  },
 
   // Filters
   filters: {
