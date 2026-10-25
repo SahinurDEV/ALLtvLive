@@ -160,6 +160,24 @@ export function SettingsSheet() {
                 </label>
               </section>
 
+              {/* Data saver */}
+              <section>
+                <label className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border/50 cursor-pointer hover:bg-secondary/50">
+                  <div className="text-sm">
+                    <div className="font-medium">{t("settings.dataSaver")}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{t("settings.dataSaverHint")}</div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.dataSaver}
+                    onChange={(e) => updateSettings({ dataSaver: e.target.checked })}
+                    className="h-5 w-5 accent-neon shrink-0"
+                    aria-label={t("settings.dataSaver")}
+                    data-testid="data-saver-toggle"
+                  />
+                </label>
+              </section>
+
               {/* Channel reliability */}
               <section>
                 <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">

@@ -57,6 +57,8 @@ interface UseUniversalPlayerResult {
   audioTracks: AudioTrackInfo[];
   audioTrack: number;
   setAudioTrack: (id: number) => void;
+  /** Bytes of video downloaded this session (HLS only). */
+  bytesLoaded: number;
 }
 
 const LOAD_TIMEOUT_MS = 8000;
@@ -89,6 +91,12 @@ export function useUniversalPlayer({
   const [level, setLevelState] = useState(-1);
   const [audioTracks, setAudioTracks] = useState<AudioTrackInfo[]>([]);
   const [audioTrack, setAudioTrackState] = useState(-1);
+  const [bytesLoaded, setBytesLoaded] = useState(0);
+  const bytesRef = useRef(0);
+  useEffect(() => {
+    const iv = setInterval(() => setBytesLoaded(bytesRef.current), 5000);
+    return () => clearInterval(iv);
+  }, []);
   const maxAutoHeightRef = useRef(maxAutoHeight);
   maxAutoHeightRef.current = maxAutoHeight;
   // HTTP status of the last failed source and how many sources were refused
@@ -319,6 +327,10 @@ export function useUniversalPlayer({
           }
         });
 
+        hls.on(Hls.Events.FRAG_LOADED, (_e, data) => {
+          bytesRef.current += data.frag.stats?.loaded || 0;
+        });
+
         hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
           const tracks = hls.audioTracks.map((t, i) => ({
             id: i,
@@ -450,6 +462,7 @@ export function useUniversalPlayer({
   }, []);
 
   return {
+    bytesLoaded,
     levels,
     level,
     setLevel,

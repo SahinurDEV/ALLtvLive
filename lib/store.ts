@@ -29,6 +29,8 @@ export interface UserSettings {
   lockedCategories: string[];
   /** 4-digit parental PIN (local soft lock) */
   parentalPin: string | null;
+  /** Data saver: cap quality at 360p (auto-on when the browser asks to save data) */
+  dataSaver: boolean;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -39,6 +41,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   kidsPin: null,
   lockedCategories: [],
   parentalPin: null,
+  dataSaver: false,
 };
 
 /** True when this channel is in a PIN-locked category. */
@@ -56,7 +59,11 @@ function loadSettings(): UserSettings {
   }
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return { ...DEFAULT_SETTINGS };
+    if (!raw)
+      return {
+        ...DEFAULT_SETTINGS,
+        dataSaver: !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData,
+      };
     const parsed = JSON.parse(raw);
     return {
       autoplay: parsed?.autoplay ?? true,
@@ -68,6 +75,10 @@ function loadSettings(): UserSettings {
         ? parsed.lockedCategories.filter((c: unknown) => typeof c === "string")
         : [],
       parentalPin: typeof parsed?.parentalPin === "string" ? parsed.parentalPin : null,
+      dataSaver:
+        typeof parsed?.dataSaver === "boolean"
+          ? parsed.dataSaver
+          : !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
