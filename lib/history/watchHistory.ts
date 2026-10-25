@@ -1,5 +1,6 @@
 "use client";
 
+import { profileKey } from "@/lib/profiles";
 const HISTORY_KEY = "alltvlive-history";
 const POPULAR_KEY = "alltvlive-popular";
 const HISTORY_LIMIT = 12;
@@ -12,7 +13,7 @@ interface HistoryEntry {
 export function loadHistory(): HistoryEntry[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(HISTORY_KEY);
+    const raw = localStorage.getItem(profileKey(HISTORY_KEY));
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -22,7 +23,7 @@ export function loadHistory(): HistoryEntry[] {
 function saveHistory(entries: HistoryEntry[]) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(entries));
+    localStorage.setItem(profileKey(HISTORY_KEY), JSON.stringify(entries));
   } catch {
     // ignore
   }
@@ -40,7 +41,7 @@ export function recordWatch(channelId: string) {
 export function clearRecent() {
   if (typeof window === "undefined") return;
   try {
-    localStorage.removeItem(HISTORY_KEY);
+    localStorage.removeItem(profileKey(HISTORY_KEY));
   } catch {
     // ignore
   }
@@ -49,8 +50,8 @@ export function clearRecent() {
 export function clearHistory() {
   if (typeof window === "undefined") return;
   try {
-    localStorage.removeItem(HISTORY_KEY);
-    localStorage.removeItem(POPULAR_KEY);
+    localStorage.removeItem(profileKey(HISTORY_KEY));
+    localStorage.removeItem(profileKey(POPULAR_KEY));
   } catch {
     // ignore
   }
@@ -59,7 +60,7 @@ export function clearHistory() {
 export function loadPopular(): Record<string, number> {
   if (typeof window === "undefined") return {};
   try {
-    const raw = localStorage.getItem(POPULAR_KEY);
+    const raw = localStorage.getItem(profileKey(POPULAR_KEY));
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
@@ -70,7 +71,7 @@ function bumpPopular(channelId: string) {
   const store = loadPopular();
   store[channelId] = (store[channelId] || 0) + 1;
   try {
-    localStorage.setItem(POPULAR_KEY, JSON.stringify(store));
+    localStorage.setItem(profileKey(POPULAR_KEY), JSON.stringify(store));
   } catch {
     // ignore
   }

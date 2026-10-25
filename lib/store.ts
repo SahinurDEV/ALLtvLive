@@ -58,7 +58,7 @@ function loadSettings(): UserSettings {
     return { ...DEFAULT_SETTINGS };
   }
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
+    const raw = localStorage.getItem(profileKey(SETTINGS_KEY));
     if (!raw)
       return {
         ...DEFAULT_SETTINGS,
@@ -88,7 +88,7 @@ function loadSettings(): UserSettings {
 function saveSettings(settings: UserSettings) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    localStorage.setItem(profileKey(SETTINGS_KEY), JSON.stringify(settings));
   } catch {
     // ignore
   }

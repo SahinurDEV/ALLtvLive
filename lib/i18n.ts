@@ -151,6 +151,14 @@ const en = {
   "hide.settingsTitle": "Hidden channels",
   "hide.count": "{n} hidden",
   "hide.showAll": "Show all again",
+  "profiles.title": "Profiles",
+  "profiles.hint": "Each profile has its own favorites, history, hidden channels and settings, on this device only. A Kids profile shows only kids' channels.",
+  "profiles.me": "Me",
+  "profiles.kidsName": "Kids",
+  "profiles.delete": "Delete profile {name}",
+  "profiles.name": "Profile name",
+  "profiles.add": "Add profile",
+  "profiles.addKids": "Add Kids profile",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -296,6 +304,14 @@ const bn: Record<MessageKey, string> = {
   "hide.settingsTitle": "লুকানো চ্যানেল",
   "hide.count": "{n}টি লুকানো",
   "hide.showAll": "সব আবার দেখান",
+  "profiles.title": "প্রোফাইল",
+  "profiles.hint": "প্রতিটি প্রোফাইলের নিজস্ব ফেভারিট, হিস্টরি, লুকানো চ্যানেল আর সেটিংস থাকে, শুধু এই ডিভাইসে। Kids প্রোফাইলে শুধু বাচ্চাদের চ্যানেল দেখায়।",
+  "profiles.me": "আমি",
+  "profiles.kidsName": "বাচ্চারা",
+  "profiles.delete": "{name} প্রোফাইল মুছুন",
+  "profiles.name": "প্রোফাইলের নাম",
+  "profiles.add": "প্রোফাইল যোগ করুন",
+  "profiles.addKids": "Kids প্রোফাইল যোগ করুন",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };
