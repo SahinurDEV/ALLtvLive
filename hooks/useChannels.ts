@@ -154,6 +154,12 @@ export function useChannels() {
   const brokenChannelIds = useAppStore((s) => s.brokenChannelIds);
   const hideBroken = useAppStore((s) => s.settings.hideBrokenChannels);
   const kidsMode = useAppStore((s) => s.settings.kidsMode);
+  // Channels the server's daily health check found dead several times in a row.
+  const { data: serverHidden } = useSWR<string[]>("/api/catalog-hidden", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 600000,
+  });
+  const serverHiddenSet = useMemo(() => new Set(serverHidden ?? []), [serverHidden]);
   const customChannels = useAppStore((s) => s.customChannels);
 
   const { channels: broadcastChannels } = useBroadcastChannels();
@@ -217,6 +223,7 @@ export function useChannels() {
 
     for (const channel of channels) {
       if (channel.is_nsfw || isBlocked(channel.id)) continue;
+      if (hideBroken && serverHiddenSet.has(channel.id)) continue;
       if (kidsMode && !channel.categories?.some((c) => KIDS_CATEGORIES.has(c))) continue;
 
       const channelStreams = streamMap.get(channel.id);
@@ -260,6 +267,7 @@ export function useChannels() {
     logoMap,
     brokenSet,
     hideBroken,
+    serverHiddenSet,
     kidsMode,
     customEnriched,
     broadcastEnriched,

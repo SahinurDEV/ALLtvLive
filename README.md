@@ -133,6 +133,7 @@ The public site needs no environment variables. The optional ones turn on extra 
 | `ADMIN_PASSWORD`, `SESSION_SECRET` | Admin sign-in (`SESSION_SECRET`: 32+ random hex chars) |
 | `ADMIN_TOTP_SECRET` | Optional 6-digit authenticator code at admin sign-in |
 | `IP_HASH_SALT` | Salt for hashed voter IPs (defaults to `SESSION_SECRET`) |
+| `CRON_SECRET` | Required for the daily dead-channel check (`/api/cron/stream-check`, scheduled in `vercel.json`). Vercel sends it automatically. Channels that fail 3 daily checks in a row are hidden until a check succeeds again; geo-blocked (403/451) results never count. |
 | `NEXT_PUBLIC_SITE_URL` | Canonical URL for robots.txt and the sitemap (default `https://alltvlive.vercel.app`) |
 | `NEXT_PUBLIC_ADSENSE_CLIENT_ID` | Google AdSense publisher ID; ads render only when set |
 
