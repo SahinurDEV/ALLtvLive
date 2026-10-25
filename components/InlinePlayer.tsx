@@ -41,6 +41,8 @@ import {
   Copy,
   AlertCircle,
   ChevronRight,
+  Maximize,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -89,6 +91,11 @@ export function InlinePlayer() {
 
   const t = useT();
   const playerRef = useRef<HTMLDivElement>(null);
+  // Mini player: when the player scrolls out of view the video itself docks
+  // into a corner and keeps playing.
+  const dockAnchorRef = useRef<HTMLDivElement>(null);
+  const [offscreen, setOffscreen] = useState(false);
+  const [dockDismissed, setDockDismissed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(80);
@@ -127,6 +134,29 @@ export function InlinePlayer() {
   });
 
   const isPlaying = phase === "playing";
+  const docked = offscreen && !dockDismissed && !!currentChannel && !isFullscreen;
+
+  useEffect(() => {
+    const el = dockAnchorRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        setOffscreen(!entry.isIntersecting);
+        if (entry.isIntersecting) setDockDismissed(false);
+      },
+      { threshold: 0, rootMargin: "-56px 0px 0px 0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [currentChannel?.id]);
+
+  const undockScroll = useCallback(() => {
+    dockAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, []);
+  const closeDock = useCallback(() => {
+    videoRef.current?.pause();
+    setDockDismissed(true);
+  }, [videoRef]);
   const isPaused = phase === "paused";
 
   const isFav = currentChannel ? favorites.includes(currentChannel.id) : false;
@@ -625,9 +655,15 @@ export function InlinePlayer() {
       }`}
     >
       <div className="flex flex-col md:flex-row">
+        <div ref={dockAnchorRef} className={`relative ${playerWidthClass} aspect-video shrink-0 bg-black`}>
         <div
           ref={playerRef}
-          className={`relative ${playerWidthClass} aspect-video bg-black shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-neon focus-visible:ring-inset`}
+          data-docked={docked ? "true" : "false"}
+          className={`${
+            docked
+              ? "fixed bottom-20 right-3 lg:bottom-4 lg:right-4 z-50 w-[200px] sm:w-[320px] rounded-lg overflow-hidden border border-neon/40 shadow-[0_0_30px_rgba(0,255,157,0.25)]"
+              : "absolute inset-0"
+          } aspect-video bg-black outline-none focus-visible:ring-2 focus-visible:ring-neon focus-visible:ring-inset`}
           onMouseMove={resetControlsTimeout}
           onMouseLeave={() => {
             playerHoverRef.current = false;
@@ -1161,6 +1197,35 @@ export function InlinePlayer() {
               </motion.div>
             )}
           </AnimatePresence>
+          {docked && (
+            <div className="absolute inset-0 z-40 flex items-start justify-end gap-1 p-1 bg-gradient-to-b from-black/60 to-transparent">
+              <button
+                type="button"
+                onClick={undockScroll}
+                className="flex-1 h-full text-left"
+                aria-label={t("mini.expand")}
+              />
+              <button
+                type="button"
+                onClick={undockScroll}
+                className="h-7 w-7 rounded-md bg-black/60 text-white flex items-center justify-center"
+                aria-label={t("mini.expand")}
+                data-testid="mini-expand"
+              >
+                <Maximize className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={closeDock}
+                className="h-7 w-7 rounded-md bg-black/60 text-white flex items-center justify-center"
+                aria-label={t("mini.close")}
+                data-testid="mini-close"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
         </div>
 
         {/* Channel Info Panel */}

@@ -82,6 +82,8 @@ const en = {
   "home.clearHistory": "Clear",
   "home.historyCleared": "Watch history cleared",
   "home.removeFromHistory": "Remove from history",
+  "mini.expand": "Back to full player",
+  "mini.close": "Close mini player",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -158,6 +160,8 @@ const bn: Record<MessageKey, string> = {
   "home.clearHistory": "মুছুন",
   "home.historyCleared": "দেখার ইতিহাস মুছে ফেলা হয়েছে",
   "home.removeFromHistory": "ইতিহাস থেকে সরান",
+  "mini.expand": "বড় প্লেয়ারে ফিরুন",
+  "mini.close": "মিনি প্লেয়ার বন্ধ করুন",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };
