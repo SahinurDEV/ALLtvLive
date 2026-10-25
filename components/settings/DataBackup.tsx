@@ -10,6 +10,7 @@ import { useT } from "@/lib/i18n";
 // another device by exporting here and importing there.
 const KEYS = [
   "alltvlive-favorites",
+  "alltvlive-fav-groups",
   "alltvlive-history",
   "alltvlive-custom-channels",
   "alltvlive-settings",

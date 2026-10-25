@@ -91,6 +91,21 @@ const en = {
   "player.noLast": "No previous channel yet",
   "player.noChannelNumber": "No channel number {n}",
   "player.numberHint": "Type a channel number",
+  "fav.emptyTitle": "No Favorites Yet",
+  "fav.emptyBody": "Tap the heart on any channel to add it to your favorites. They will appear here for quick access.",
+  "fav.groups": "Favorite groups",
+  "fav.all": "All",
+  "fav.newGroup": "New group",
+  "fav.addGroup": "Add group",
+  "fav.arrange": "Arrange",
+  "fav.done": "Done",
+  "fav.deleteGroup": "Delete group",
+  "fav.arrangeHint": "Drag the handle or use the arrows to reorder. Tap a group to add or remove a channel.",
+  "fav.groupEmpty": "No channels in this group yet. Tap Arrange to add some.",
+  "fav.title": "My Favorites",
+  "fav.drag": "Drag to reorder",
+  "fav.moveUp": "Move up",
+  "fav.moveDown": "Move down",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -176,6 +191,21 @@ const bn: Record<MessageKey, string> = {
   "player.noLast": "এখনো আগের কোনো চ্যানেল নেই",
   "player.noChannelNumber": "{n} নম্বরে কোনো চ্যানেল নেই",
   "player.numberHint": "চ্যানেল নম্বর টাইপ করুন",
+  "fav.emptyTitle": "এখনো কোনো ফেভারিট নেই",
+  "fav.emptyBody": "যেকোনো চ্যানেলের হার্ট আইকনে চাপ দিন। ফেভারিট চ্যানেলগুলো দ্রুত দেখার জন্য এখানে থাকবে।",
+  "fav.groups": "ফেভারিট গ্রুপ",
+  "fav.all": "সব",
+  "fav.newGroup": "নতুন গ্রুপ",
+  "fav.addGroup": "গ্রুপ যোগ করুন",
+  "fav.arrange": "সাজান",
+  "fav.done": "শেষ",
+  "fav.deleteGroup": "গ্রুপ মুছুন",
+  "fav.arrangeHint": "ক্রম বদলাতে হ্যান্ডেল টানুন বা তীর চাপুন। চ্যানেল যোগ বা বাদ দিতে গ্রুপে চাপ দিন।",
+  "fav.groupEmpty": "এই গ্রুপে এখনো কোনো চ্যানেল নেই। যোগ করতে 'সাজান' চাপুন।",
+  "fav.title": "আমার ফেভারিট",
+  "fav.drag": "ক্রম বদলাতে টানুন",
+  "fav.moveUp": "উপরে নিন",
+  "fav.moveDown": "নিচে নিন",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };
