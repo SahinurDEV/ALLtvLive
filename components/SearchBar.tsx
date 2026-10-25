@@ -1,5 +1,7 @@
 "use client";
 
+import { rankChannels } from "@/lib/search/smartSearch";
+
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { Search, X, Radio, CornerDownLeft, Clock, Flame } from "lucide-react";
@@ -11,19 +13,6 @@ import { useT } from "@/lib/i18n";
 const MAX_RESULTS = 8;
 const MAX_SUGGESTIONS = 6;
 
-function scoreMatch(query: string, ch: ChannelWithMeta): number {
-  const q = query.toLowerCase();
-  const name = ch.name.toLowerCase();
-  if (name === q) return 1000;
-  if (name.startsWith(q)) return 900 - Math.min(name.length, 100);
-  const idx = name.indexOf(q);
-  if (idx !== -1) return 700 - idx;
-  if (ch.id.toLowerCase().includes(q)) return 500;
-  if (ch.alt_names?.some((n) => n.toLowerCase().includes(q))) return 400;
-  if (ch.countryInfo?.name.toLowerCase().includes(q)) return 200;
-  if (ch.categories?.some((c) => c.toLowerCase().includes(q))) return 100;
-  return -1;
-}
 
 function formatViewers(count: number): string | null {
   if (!count || count < 10) return null;
@@ -58,13 +47,7 @@ export function SearchBar() {
 
   const results = useMemo<ChannelWithMeta[]>(() => {
     if (!trimmed) return [];
-    const scored: Array<{ ch: ChannelWithMeta; s: number }> = [];
-    for (const ch of allChannels) {
-      const s = scoreMatch(trimmed, ch);
-      if (s > 0) scored.push({ ch, s });
-    }
-    scored.sort((a, b) => b.s - a.s || b.ch.viewerCount - a.ch.viewerCount);
-    return scored.slice(0, MAX_RESULTS).map((x) => x.ch);
+    return rankChannels(trimmed, allChannels, MAX_RESULTS);
   }, [trimmed, allChannels]);
 
   const suggestions = useMemo<Section[]>(() => {

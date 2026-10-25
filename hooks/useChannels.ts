@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import { useMemo, useEffect } from "react";
-import Fuse from "fuse.js";
+import { rankChannels } from "@/lib/search/smartSearch";
 import type {
   Channel,
   Stream,
@@ -272,28 +272,12 @@ export function useChannels() {
     }
   }, [enrichedChannels, setAllChannels]);
 
-  // Fuse.js index for fuzzy search
-  const fuse = useMemo(() => {
-    if (enrichedChannels.length === 0) return null;
-    return new Fuse(enrichedChannels, {
-      keys: [
-        { name: "name", weight: 0.5 },
-        { name: "alt_names", weight: 0.2 },
-        { name: "country", weight: 0.15 },
-        { name: "categories", weight: 0.15 },
-      ],
-      threshold: 0.3,
-      includeScore: true,
-    });
-  }, [enrichedChannels]);
-
   // Filtered channels
   const filteredChannels = useMemo(() => {
     let result = enrichedChannels;
 
-    if (filters.search && fuse) {
-      const searchResults = fuse.search(filters.search, { limit: 200 });
-      result = searchResults.map((r) => r.item);
+    if (filters.search) {
+      result = rankChannels(filters.search, enrichedChannels);
     }
 
     if (filters.countries.length > 0) {
@@ -313,7 +297,7 @@ export function useChannels() {
     }
 
     return result;
-  }, [enrichedChannels, filters, fuse]);
+  }, [enrichedChannels, filters]);
 
   // Featured channels (top 10)
   const featuredChannels = useMemo(
