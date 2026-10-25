@@ -56,7 +56,7 @@ export function clearHistory() {
   }
 }
 
-function loadPopular(): Record<string, number> {
+export function loadPopular(): Record<string, number> {
   if (typeof window === "undefined") return {};
   try {
     const raw = localStorage.getItem(POPULAR_KEY);

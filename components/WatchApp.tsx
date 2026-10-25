@@ -13,6 +13,7 @@ import { ContinueWatchingRow } from "@/components/home/ContinueWatchingRow";
 import { ForYouRow } from "@/components/home/ForYouRow";
 import { TrendingRow } from "@/components/home/TrendingRow";
 import { QuickFilterChips } from "@/components/home/QuickFilterChips";
+import { TimeOfDayRow } from "@/components/home/TimeOfDayRow";
 import { FeaturedRow } from "@/components/home/FeaturedRow";
 import { WatchHeroBar } from "@/components/home/WatchHeroBar";
 import { DiscoverCategoryTiles } from "@/components/home/DiscoverCategoryTiles";
@@ -401,6 +402,8 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
                     <ContinueWatchingRow allChannels={allChannels} />
 
                     <ForYouRow allChannels={allChannels} />
+
+                    <TimeOfDayRow allChannels={allChannels} />
 
                     <FeaturedRow channels={featuredChannels} />
 
