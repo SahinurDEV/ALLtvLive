@@ -36,6 +36,16 @@ export function recordWatch(channelId: string) {
   bumpPopular(channelId);
 }
 
+/** Clear only the recently-watched list (keeps local popularity counts). */
+export function clearRecent() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(HISTORY_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 export function clearHistory() {
   if (typeof window === "undefined") return;
   try {

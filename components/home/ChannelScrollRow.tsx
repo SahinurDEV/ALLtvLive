@@ -11,9 +11,10 @@ interface Props {
   title: string;
   icon?: React.ReactNode;
   emptyText?: string;
+  action?: React.ReactNode;
 }
 
-export function ChannelScrollRow({ channels, title, icon, emptyText }: Props) {
+export function ChannelScrollRow({ channels, title, icon, emptyText, action }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = useCallback((direction: "left" | "right") => {
@@ -45,6 +46,8 @@ export function ChannelScrollRow({ channels, title, icon, emptyText }: Props) {
           {icon}
           {title}
         </h2>
+        <div className="flex items-center gap-1">
+          {action}
         <div className="hidden md:flex items-center gap-1">
           <Button
             variant="ghost"
@@ -64,6 +67,7 @@ export function ChannelScrollRow({ channels, title, icon, emptyText }: Props) {
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
+        </div>
         </div>
       </div>
 

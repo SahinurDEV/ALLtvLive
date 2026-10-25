@@ -58,6 +58,10 @@ const en = {
   "multi.layout": "Layout",
   "multi.muteHint": "Tap a tile to hear it; the others stay muted",
   "footer.dmca": "Copyright & Takedown",
+  "home.continue": "Continue Watching",
+  "home.clearHistory": "Clear",
+  "home.historyCleared": "Watch history cleared",
+  "home.removeFromHistory": "Remove from history",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -110,6 +114,10 @@ const bn: Record<MessageKey, string> = {
   "multi.layout": "লেআউট",
   "multi.muteHint": "শুনতে একটি টাইলে চাপুন; বাকিগুলো মিউট থাকবে",
   "footer.dmca": "কপিরাইট ও অপসারণ",
+  "home.continue": "দেখা চালিয়ে যান",
+  "home.clearHistory": "মুছুন",
+  "home.historyCleared": "দেখার ইতিহাস মুছে ফেলা হয়েছে",
+  "home.removeFromHistory": "ইতিহাস থেকে সরান",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };

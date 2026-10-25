@@ -4,6 +4,7 @@ import {
   loadHistory,
   recordWatch,
   clearHistory,
+  clearRecent,
   getPopularChannelIds,
 } from "./history/watchHistory";
 import {
@@ -136,6 +137,7 @@ interface AppState {
   hydrateHistory: () => void;
   logWatch: (channelId: string) => void;
   clearWatchHistory: () => void;
+  clearRecentlyWatched: () => void;
 
   // Settings
   settings: UserSettings;
@@ -283,6 +285,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   clearWatchHistory: () => {
     clearHistory();
     set({ historyIds: [], popularIds: [] });
+  },
+  clearRecentlyWatched: () => {
+    clearRecent();
+    set({ historyIds: [] });
   },
 
   // Settings
