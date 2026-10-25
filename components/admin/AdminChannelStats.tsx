@@ -40,7 +40,7 @@ export function AdminChannelStats({ rangeMs, reloadKey }: { rangeMs: number; rel
                   <span className="w-5 text-muted-foreground">{i + 1}.</span>
                   <span className="truncate flex-1">{p.name}</span>
                   <span className="font-mono">{p.plays}</span>
-                  <span className="font-mono text-muted-foreground w-16 text-right">{p.viewers} viewers</span>
+                  <span className="font-mono text-muted-foreground w-20 whitespace-nowrap text-right">{p.viewers} viewers</span>
                 </div>
                 <div className="h-1 mt-1 rounded bg-secondary/50">
                   <div className="h-1 rounded bg-neon" style={{ width: `${(p.plays / maxPlays) * 100}%` }} />
@@ -65,7 +65,7 @@ export function AdminChannelStats({ rangeMs, reloadKey }: { rangeMs: number; rel
                   <span className="w-5 text-muted-foreground">{i + 1}.</span>
                   <span className="truncate flex-1">{r.name}</span>
                   <span className="font-mono">{r.reports}</span>
-                  <span className="font-mono text-amber-400 w-14 text-right">{r.open} open</span>
+                  <span className="font-mono text-amber-400 w-16 whitespace-nowrap text-right">{r.open} open</span>
                 </div>
                 <div className="h-1 mt-1 rounded bg-secondary/50">
                   <div className="h-1 rounded bg-red-400" style={{ width: `${(r.reports / maxReports) * 100}%` }} />
