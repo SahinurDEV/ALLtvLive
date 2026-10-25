@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AdminChannelStats } from "./AdminChannelStats";
 
 interface HeatmapResponse {
   grid: number[][];
@@ -55,9 +56,11 @@ export function AdminAnalyticsPanel() {
   const [geo, setGeo] = useState<GeoResponse | null>(null);
   const [rangeMs, setRangeMs] = useState(7 * 24 * 60 * 60 * 1000);
   const [loading, setLoading] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setReloadKey((k) => k + 1);
     try {
       const [hRes, gRes] = await Promise.all([
         fetch(`/api/history/heatmap?rangeMs=${rangeMs}`),
@@ -92,7 +95,7 @@ export function AdminAnalyticsPanel() {
   return (
     <div className="space-y-6">
       {/* Range switcher */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Range</span>
         {RANGE_OPTIONS.map((r) => (
           <button
@@ -118,6 +121,8 @@ export function AdminAnalyticsPanel() {
           Refresh
         </Button>
       </div>
+
+      <AdminChannelStats rangeMs={rangeMs} reloadKey={reloadKey} />
 
       {/* Peak-time heatmap */}
       <div className="rounded-2xl border border-border/60 bg-card/60 p-5">
