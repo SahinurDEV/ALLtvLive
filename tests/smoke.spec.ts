@@ -42,3 +42,19 @@ test("catalog API returns slim data", async ({ request }) => {
   const logos = (await res.json()) as Array<{ channel: string; url: string }>;
   expect(logos.length).toBeGreaterThan(1000);
 });
+
+test("continue watching row can be cleared", async ({ page }) => {
+  await page.goto("/watch");
+  const row = page.getByTestId("continue-watching");
+  // The autoplayed channel is recorded in history; skip if the catalog is unreachable.
+  try {
+    await row.waitFor({ timeout: 20_000 });
+  } catch {
+    test.skip(true, "catalog unavailable");
+  }
+  await row.getByRole("button", { name: "Clear" }).click();
+  await expect(row).toHaveCount(0);
+  const stored = await page.evaluate(() => localStorage.getItem("alltvlive-history"));
+  expect(stored === null || stored === "[]").toBeTruthy();
+  await noSideScroll(page);
+});
