@@ -165,6 +165,14 @@ const en = {
   "settings.textXL": "Extra large",
   "settings.easyMode": "Easy mode",
   "settings.easyModeHint": "Bigger buttons and a simpler home page",
+  "stats.title": "Your watch stats",
+  "stats.empty": "Watch a channel for a minute and your weekly stats show up here.",
+  "stats.thisWeek": "watched in the last 7 days",
+  "stats.streak": "{n}-day streak",
+  "stats.chart": "Watch time per day",
+  "stats.top": "Most watched",
+  "stats.hm": "{h} h {m} min",
+  "stats.m": "{m} min",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -324,6 +332,14 @@ const bn: Record<MessageKey, string> = {
   "settings.textXL": "অনেক বড়",
   "settings.easyMode": "সহজ মোড",
   "settings.easyModeHint": "বড় বাটন আর সহজ হোম পেজ",
+  "stats.title": "আপনার দেখার হিসাব",
+  "stats.empty": "এক মিনিট কোনো চ্যানেল দেখলেই এখানে সাপ্তাহিক হিসাব দেখাবে।",
+  "stats.thisWeek": "গত ৭ দিনে দেখেছেন",
+  "stats.streak": "টানা {n} দিন",
+  "stats.chart": "প্রতিদিন দেখার সময়",
+  "stats.top": "সবচেয়ে বেশি দেখা",
+  "stats.hm": "{h} ঘণ্টা {m} মিনিট",
+  "stats.m": "{m} মিনিট",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };

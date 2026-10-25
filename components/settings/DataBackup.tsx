@@ -12,6 +12,7 @@ const KEYS = [
   "alltvlive-favorites",
   "alltvlive-fav-groups",
   "alltvlive-hidden-channels",
+  "alltvlive-watchtime",
   "alltvlive-history",
   "alltvlive-custom-channels",
   "alltvlive-settings",
