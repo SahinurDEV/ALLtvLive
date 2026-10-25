@@ -44,6 +44,7 @@ import {
   Maximize,
   X,
   History,
+  Headphones,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -113,6 +114,8 @@ export function InlinePlayer() {
   const [showSourceMenu, setShowSourceMenu] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [autoNext, setAutoNext] = useState(false);
+  const [audioOnly, setAudioOnly] = useState(false);
+  const [bgPlay, setBgPlay] = useState(false);
   const watchStartRef = useRef<number>(Date.now());
 
   const {
@@ -138,6 +141,8 @@ export function InlinePlayer() {
     channel: currentChannel,
     autoplay: settings.autoplay,
     onFatalError: markChannelBroken,
+    // Audio-only mode fetches the smallest rendition to save data.
+    maxAutoHeight: audioOnly ? 1 : null,
   });
 
   const isPlaying = phase === "playing";
@@ -305,6 +310,36 @@ export function InlinePlayer() {
     else toast.info(t("player.noLast"));
   }, [openPlayer, lastChannel, t]);
 
+  // Lock-screen / notification controls (Media Session API)
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator) || !currentChannel) return;
+    const msn = navigator.mediaSession;
+    try {
+      msn.metadata = new MediaMetadata({
+        title: currentChannel.name,
+        artist: "ALLtvLive",
+        album: currentChannel.countryInfo?.name || currentChannel.country || "Live TV",
+        artwork: currentChannel.logo ? [{ src: currentChannel.logo, sizes: "512x512" }] : [],
+      });
+      const set = (a: MediaSessionAction, h: MediaSessionActionHandler | null) => {
+        try {
+          msn.setActionHandler(a, h);
+        } catch {
+          // unsupported action
+        }
+      };
+      set("play", () => videoRef.current?.play().catch(() => {}));
+      set("pause", () => videoRef.current?.pause());
+      set("nexttrack", () => zap("next"));
+      set("previoustrack", () => zap("prev"));
+      set("enterpictureinpicture" as MediaSessionAction, () => {
+        videoRef.current?.requestPictureInPicture?.().catch(() => {});
+      });
+    } catch {
+      // ignore
+    }
+  }, [currentChannel, zap, videoRef]);
+
   // Number keys: type a channel number (like a TV remote), jump after a pause.
   const [numberEntry, setNumberEntry] = useState("");
   const numberTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -412,6 +447,69 @@ export function InlinePlayer() {
       toast.error("Picture-in-Picture isn't available on this browser.");
     }
   }, [videoRef]);
+
+  // PiP support (Android Chrome and desktop; iOS Safari via webkit API)
+  const [canPiP, setCanPiP] = useState(false);
+  useEffect(() => {
+    setCanPiP(typeof document !== "undefined" && !!document.pictureInPictureEnabled);
+  }, []);
+
+  // Audio-only ("radio") mode and keep playing in the background
+  useEffect(() => {
+    try {
+      setAudioOnly(localStorage.getItem("alltvlive-audio-only") === "1");
+      setBgPlay(localStorage.getItem("alltvlive-bg-play") === "1");
+    } catch {
+      // ignore
+    }
+  }, []);
+  const toggleAudioOnly = useCallback(() => {
+    setAudioOnly((v) => {
+      try {
+        localStorage.setItem("alltvlive-audio-only", v ? "0" : "1");
+      } catch {
+        // ignore
+      }
+      return !v;
+    });
+  }, []);
+  const toggleBgPlay = useCallback(() => {
+    setBgPlay((v) => {
+      try {
+        localStorage.setItem("alltvlive-bg-play", v ? "0" : "1");
+      } catch {
+        // ignore
+      }
+      return !v;
+    });
+  }, []);
+  // When the tab is hidden some mobile browsers pause video; resume it when
+  // background play is on (audio keeps going, like a radio).
+  useEffect(() => {
+    if (!bgPlay) return;
+    let wasPlaying = false;
+    const onVis = () => {
+      const v = videoRef.current;
+      if (!v) return;
+      if (document.visibilityState === "hidden") {
+        wasPlaying = !v.paused;
+        setTimeout(() => {
+          if (wasPlaying && v.paused) v.play().catch(() => {});
+        }, 300);
+      }
+    };
+    const onPause = () => {
+      const v = videoRef.current;
+      if (document.visibilityState === "hidden" && wasPlaying && v) v.play().catch(() => {});
+    };
+    document.addEventListener("visibilitychange", onVis);
+    const v = videoRef.current;
+    v?.addEventListener("pause", onPause);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      v?.removeEventListener("pause", onPause);
+    };
+  }, [bgPlay, videoRef, currentChannel?.id]);
 
   const cyclePlaybackRate = useCallback(
     (dir: "up" | "down") => {
@@ -744,6 +842,17 @@ export function InlinePlayer() {
             <div className="absolute top-2 right-2 z-30 px-3 py-1 rounded-lg bg-black/80 text-neon font-mono text-2xl font-bold border border-neon/40" data-testid="number-entry" aria-live="polite">
               {numberEntry}
               <span className="animate-pulse">_</span>
+            </div>
+          )}
+
+          {audioOnly && !isYouTube && (
+            <div className="absolute inset-0 z-[5] flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#0a0a2e] via-black to-[#1a0a1e] pointer-events-none" data-testid="audio-only">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={currentChannel.logo || getPlaceholderLogo(currentChannel.name)} alt="" className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-xl bg-white/5 p-2" />
+              <div className="flex items-center gap-1.5 text-xs text-white/80">
+                <Headphones className="h-3.5 w-3.5 text-pink-400" />
+                {t("player.listening")}
+              </div>
             </div>
           )}
 
@@ -1129,6 +1238,28 @@ export function InlinePlayer() {
                                 active={theaterMode}
                                 onClick={toggleTheaterMode}
                               />
+                              {canPiP && (
+                                <ExtrasRow
+                                  icon={<PictureInPicture2 className="h-3.5 w-3.5 text-sky-400" />}
+                                  label={t("player.pip")}
+                                  onClick={() => {
+                                    togglePiP();
+                                    setShowExtras(false);
+                                  }}
+                                />
+                              )}
+                              <ExtrasRow
+                                icon={<Headphones className="h-3.5 w-3.5 text-pink-400" />}
+                                label={t("player.audioOnly")}
+                                active={audioOnly}
+                                onClick={toggleAudioOnly}
+                              />
+                              <ExtrasRow
+                                icon={<Radio className="h-3.5 w-3.5 text-orange-400" />}
+                                label={t("player.bgPlay")}
+                                active={bgPlay}
+                                onClick={toggleBgPlay}
+                              />
                               <ExtrasRow
                                 icon={<Zap className="h-3.5 w-3.5 text-neon" />}
                                 label={t("player.autoSkip")}
@@ -1190,7 +1321,7 @@ export function InlinePlayer() {
                       variant="ghost"
                       size="icon"
                       onClick={togglePiP}
-                      className="text-white hover:bg-white/10 h-7 w-7 hidden md:flex"
+                      className={`text-white hover:bg-white/10 h-7 w-7 ${canPiP ? "flex" : "hidden"}`}
                       aria-label="Picture in Picture"
                     >
                       <PictureInPicture2 className="h-3.5 w-3.5" />
