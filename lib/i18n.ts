@@ -87,6 +87,10 @@ const en = {
   "player.quality": "Quality",
   "player.qualityAuto": "Auto",
   "player.audio": "Audio language",
+  "player.last": "Last",
+  "player.noLast": "No previous channel yet",
+  "player.noChannelNumber": "No channel number {n}",
+  "player.numberHint": "Type a channel number",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -168,6 +172,10 @@ const bn: Record<MessageKey, string> = {
   "player.quality": "কোয়ালিটি",
   "player.qualityAuto": "অটো",
   "player.audio": "অডিওর ভাষা",
+  "player.last": "আগের",
+  "player.noLast": "এখনো আগের কোনো চ্যানেল নেই",
+  "player.noChannelNumber": "{n} নম্বরে কোনো চ্যানেল নেই",
+  "player.numberHint": "চ্যানেল নম্বর টাইপ করুন",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };
@@ -206,5 +214,12 @@ export function useLang(): Lang {
 /** `const t = useT(); t("nav.home")` */
 export function useT() {
   const lang = useLang();
-  return useCallback((key: MessageKey) => DICTS[lang][key] ?? en[key], [lang]);
+  return useCallback(
+    (key: MessageKey, vars?: Record<string, string | number>) => {
+      let msg: string = DICTS[lang][key] ?? en[key];
+      if (vars) for (const [k, v] of Object.entries(vars)) msg = msg.replace(`{${k}}`, String(v));
+      return msg;
+    },
+    [lang]
+  );
 }

@@ -132,3 +132,16 @@ test("iOS Safari gets add-to-home-screen steps that stay dismissed", async ({ br
   await expect(prompt).toHaveCount(0);
   await ctx.close();
 });
+
+test("typing a channel number shows the number overlay", async ({ page }) => {
+  await page.goto("/watch");
+  try {
+    await expect(page.locator("#main-player")).toBeVisible({ timeout: 20_000 });
+  } catch {
+    test.skip(true, "catalog unreachable");
+  }
+  await page.locator("body").click({ position: { x: 1, y: 1 } }).catch(() => {});
+  await page.keyboard.press("1");
+  await page.keyboard.press("2");
+  await expect(page.getByTestId("number-entry")).toContainText("12");
+});
