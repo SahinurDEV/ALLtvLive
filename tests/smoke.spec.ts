@@ -145,3 +145,14 @@ test("typing a channel number shows the number overlay", async ({ page }) => {
   await page.keyboard.press("2");
   await expect(page.getByTestId("number-entry")).toContainText("12");
 });
+
+test("search understands Bangla words and typos", async ({ page }) => {
+  await page.goto("/watch");
+  const box = page.getByPlaceholder(/search channels/i).first();
+  await expect(box).toBeVisible({ timeout: 20_000 });
+  for (const q of ["খবর", "aljazera"]) {
+    await box.fill(q);
+    await expect(page.getByText(/Results for/).first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/No channels/i)).toHaveCount(0);
+  }
+});
