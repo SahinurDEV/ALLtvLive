@@ -159,6 +159,8 @@ export function useChannels() {
     revalidateOnFocus: false,
     dedupingInterval: 600000,
   });
+  const userHidden = useAppStore((s) => s.hiddenChannelIds);
+  const userHiddenSet = useMemo(() => new Set(userHidden), [userHidden]);
   const serverHiddenSet = useMemo(() => new Set(serverHidden ?? []), [serverHidden]);
   const customChannels = useAppStore((s) => s.customChannels);
 
@@ -224,6 +226,7 @@ export function useChannels() {
     for (const channel of channels) {
       if (channel.is_nsfw || isBlocked(channel.id)) continue;
       if (hideBroken && serverHiddenSet.has(channel.id)) continue;
+      if (userHiddenSet.has(channel.id)) continue;
       if (kidsMode && !channel.categories?.some((c) => KIDS_CATEGORIES.has(c))) continue;
 
       const channelStreams = streamMap.get(channel.id);
@@ -268,6 +271,7 @@ export function useChannels() {
     brokenSet,
     hideBroken,
     serverHiddenSet,
+    userHiddenSet,
     kidsMode,
     customEnriched,
     broadcastEnriched,

@@ -11,6 +11,7 @@ import { useT } from "@/lib/i18n";
 const KEYS = [
   "alltvlive-favorites",
   "alltvlive-fav-groups",
+  "alltvlive-hidden-channels",
   "alltvlive-history",
   "alltvlive-custom-channels",
   "alltvlive-settings",

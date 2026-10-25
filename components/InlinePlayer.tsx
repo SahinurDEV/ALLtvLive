@@ -46,6 +46,7 @@ import {
   History,
   Headphones,
   Leaf,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -91,6 +92,8 @@ export function InlinePlayer() {
     theaterMode,
     toggleTheaterMode,
     updateSettings,
+    hideChannel,
+    unhideChannel,
   } = useAppStore();
 
   const t = useT();
@@ -1277,6 +1280,19 @@ export function InlinePlayer() {
                                 label={t("player.autoSkip")}
                                 active={autoNext}
                                 onClick={toggleAutoNext}
+                              />
+                              <ExtrasRow
+                                icon={<EyeOff className="h-3.5 w-3.5 text-white/70" />}
+                                label={t("hide.this")}
+                                onClick={() => {
+                                  const ch = currentChannel;
+                                  setShowExtras(false);
+                                  zap("next");
+                                  hideChannel(ch.id);
+                                  toast(t("hide.done", { name: ch.name }), {
+                                    action: { label: t("hide.undo"), onClick: () => unhideChannel(ch.id) },
+                                  });
+                                }}
                               />
                               <ExtrasRow
                                 icon={<Camera className="h-3.5 w-3.5 text-blue-400" />}
