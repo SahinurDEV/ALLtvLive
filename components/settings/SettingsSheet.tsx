@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { KidsModeSection } from "@/components/settings/KidsModeSection";
+import { WatchStatsSection } from "@/components/settings/WatchStatsSection";
 import { ProfilesSection } from "@/components/settings/ProfilesSection";
 import { ParentalLockSection } from "@/components/settings/ParentalLockSection";
 import { useT } from "@/lib/i18n";
@@ -272,6 +273,7 @@ export function SettingsSheet() {
                 )}
               </section>
 
+              <WatchStatsSection />
               <ProfilesSection />
               <KidsModeSection />
               <ParentalLockSection />

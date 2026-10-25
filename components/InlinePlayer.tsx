@@ -59,6 +59,7 @@ import { PlayerShell } from "@/components/player/PlayerShell";
 import { logViewEvent } from "@/lib/history/viewLogger";
 import { RatingButtons } from "@/components/RatingButtons";
 import { toast } from "sonner";
+import { addWatchSeconds } from "@/lib/history/watchTime";
 
 const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 const SLEEP_PRESETS = [
@@ -197,6 +198,14 @@ export function InlinePlayer() {
     watchStartRef.current = Date.now();
     setWatchElapsedSec(0);
   }, [currentChannel?.id]);
+
+  // Count real watch time per channel for the Watch stats (every 15s)
+  useEffect(() => {
+    if (!isPlaying || !currentChannel) return;
+    const id = currentChannel.id;
+    const iv = setInterval(() => addWatchSeconds(id, 15), 15_000);
+    return () => clearInterval(iv);
+  }, [isPlaying, currentChannel]);
 
   // Tick watch counter every second while playing
   useEffect(() => {
