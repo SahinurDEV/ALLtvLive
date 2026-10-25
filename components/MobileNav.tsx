@@ -54,7 +54,7 @@ export function MobileNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-border/50 bg-background/95 backdrop-blur-xl lg:hidden">
-      <div className="flex items-center justify-around h-14 px-1">
+      <div className="flex items-center justify-around min-h-14 px-1">
         {items.map((item) => {
           const isActive = activeView === item.id;
           return (
@@ -65,14 +65,14 @@ export function MobileNav() {
                 if (item.id === "settings") return setSettingsOpen(true);
                 handleNav(item.id);
               }}
-              className={`relative flex flex-col items-center gap-0.5 px-2 py-1.5 text-[10px] font-medium transition-colors ${
+              className={`relative flex-1 min-w-0 flex flex-col items-center gap-0.5 px-1 py-1.5 text-[10px] font-medium transition-colors ${
                 isActive ? "text-neon" : "text-muted-foreground"
               }`}
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
             >
               <item.icon className="h-5 w-5" />
-              {item.label}
+              <span className="max-w-full truncate">{item.label}</span>
               {"count" in item && (item.count ?? 0) > 0 && (
                 <span className="absolute top-0.5 right-1 min-w-[16px] h-4 px-1 bg-neon text-black text-[8px] font-bold rounded-full flex items-center justify-center">
                   {item.count}

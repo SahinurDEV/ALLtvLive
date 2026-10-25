@@ -31,6 +31,10 @@ export interface UserSettings {
   parentalPin: string | null;
   /** Data saver: cap quality at 360p (auto-on when the browser asks to save data) */
   dataSaver: boolean;
+  /** Text size: 1 = normal, 1.125 = large, 1.25 = extra large */
+  fontScale: number;
+  /** Easy mode: bigger buttons and a simpler home page */
+  easyMode: boolean;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -42,6 +46,8 @@ export const DEFAULT_SETTINGS: UserSettings = {
   lockedCategories: [],
   parentalPin: null,
   dataSaver: false,
+  fontScale: 1,
+  easyMode: false,
 };
 
 /** True when this channel is in a PIN-locked category. */
@@ -75,6 +81,8 @@ function loadSettings(): UserSettings {
         ? parsed.lockedCategories.filter((c: unknown) => typeof c === "string")
         : [],
       parentalPin: typeof parsed?.parentalPin === "string" ? parsed.parentalPin : null,
+      fontScale: [1, 1.125, 1.25].includes(parsed?.fontScale) ? parsed.fontScale : 1,
+      easyMode: parsed?.easyMode === true,
       dataSaver:
         typeof parsed?.dataSaver === "boolean"
           ? parsed.dataSaver

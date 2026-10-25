@@ -96,6 +96,13 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
     hydrateCustomChannels,
   ]);
 
+  // Text size and easy mode apply to the whole page
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.fontSize = settings.fontScale && settings.fontScale !== 1 ? `${settings.fontScale * 100}%` : "";
+    root.classList.toggle("easy-mode", !!settings.easyMode);
+  }, [settings.fontScale, settings.easyMode]);
+
   // "My Channels" is now a centered modal — redirect any stale nav to it
   useEffect(() => {
     if (activeView === "custom") {
@@ -409,17 +416,23 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
 
                     <TimeOfDayRow allChannels={allChannels} />
 
-                    <NewlyAddedRow allChannels={allChannels} />
+                    {!settings.easyMode && (
+                      <NewlyAddedRow allChannels={allChannels} />
+                    )}
 
                     <FeaturedRow channels={featuredChannels} />
 
-                    <DiscoverCategoryTiles allChannels={allChannels} />
+                    {!settings.easyMode && (
+                      <DiscoverCategoryTiles allChannels={allChannels} />
+                    )}
 
-                    <QuickFilterChips
+                    {!settings.easyMode && (
+                      <QuickFilterChips
                       categories={categories}
                       countries={countries}
                       allChannels={allChannels}
                     />
+                    )}
 
                     <TrendingRow
                       allChannels={allChannels}

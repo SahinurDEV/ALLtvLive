@@ -117,3 +117,19 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Easy mode: larger tap targets and text for older or less confident users */
+.easy-mode button,
+.easy-mode [role="button"],
+.easy-mode a {
+  min-height: 2.75rem;
+}
+.easy-mode body {
+  letter-spacing: 0.01em;
+}
+.easy-mode .text-\[10px\],
+.easy-mode .text-\[11px\],
+.easy-mode .text-xs {
+  font-size: 0.8125rem;
+  line-height: 1.15rem;
+}
