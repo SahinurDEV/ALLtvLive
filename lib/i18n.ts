@@ -133,6 +133,10 @@ const en = {
   "lock.categories": "Lock these categories",
   "lock.done": "Done",
   "lock.remove": "Remove lock",
+  "player.dataSaver": "Data saver (max 360p)",
+  "player.dataUsed": "Video data this visit: {mb} MB",
+  "settings.dataSaver": "Data saver",
+  "settings.dataSaverHint": "Caps video at 360p to use less mobile data. Turns on by itself if your phone asks apps to save data.",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -260,6 +264,10 @@ const bn: Record<MessageKey, string> = {
   "lock.categories": "এই ক্যাটাগরিগুলো লক করুন",
   "lock.done": "শেষ",
   "lock.remove": "লক সরান",
+  "player.dataSaver": "ডেটা সেভার (সর্বোচ্চ ৩৬০p)",
+  "player.dataUsed": "এই ভিজিটে ভিডিও ডেটা: {mb} MB",
+  "settings.dataSaver": "ডেটা সেভার",
+  "settings.dataSaverHint": "মোবাইল ডেটা কম খরচের জন্য ভিডিও সর্বোচ্চ ৩৬০p-তে চলবে। ফোনে ডেটা সেভার চালু থাকলে নিজে থেকেই চালু হয়।",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };

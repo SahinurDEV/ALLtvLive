@@ -45,6 +45,7 @@ import {
   X,
   History,
   Headphones,
+  Leaf,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -89,6 +90,7 @@ export function InlinePlayer() {
     unmarkChannelBroken,
     theaterMode,
     toggleTheaterMode,
+    updateSettings,
   } = useAppStore();
 
   const t = useT();
@@ -137,12 +139,13 @@ export function InlinePlayer() {
     audioTracks,
     audioTrack,
     setAudioTrack,
+    bytesLoaded,
   } = useUniversalPlayer({
     channel: currentChannel,
     autoplay: settings.autoplay,
     onFatalError: markChannelBroken,
     // Audio-only mode fetches the smallest rendition to save data.
-    maxAutoHeight: audioOnly ? 1 : null,
+    maxAutoHeight: audioOnly ? 1 : settings.dataSaver ? 360 : null,
   });
 
   const isPlaying = phase === "playing";
@@ -1248,6 +1251,15 @@ export function InlinePlayer() {
                                   }}
                                 />
                               )}
+                              <ExtrasRow
+                                icon={<Leaf className="h-3.5 w-3.5 text-green-400" />}
+                                label={t("player.dataSaver")}
+                                active={settings.dataSaver}
+                                onClick={() => updateSettings({ dataSaver: !settings.dataSaver })}
+                              />
+                              <div className="px-3 pb-1 text-[10px] text-white/50" data-testid="data-used">
+                                {t("player.dataUsed", { mb: (bytesLoaded / 1048576).toFixed(1) })}
+                              </div>
                               <ExtrasRow
                                 icon={<Headphones className="h-3.5 w-3.5 text-pink-400" />}
                                 label={t("player.audioOnly")}
