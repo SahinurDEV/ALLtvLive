@@ -137,6 +137,10 @@ const en = {
   "player.dataUsed": "Video data this visit: {mb} MB",
   "settings.dataSaver": "Data saver",
   "settings.dataSaverHint": "Caps video at 360p to use less mobile data. Turns on by itself if your phone asks apps to save data.",
+  "card.reliable": "Reliable",
+  "card.unstable": "Unstable",
+  "card.rating": "{pct}% of viewers liked this",
+  "home.newlyAdded": "Newly added",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -268,6 +272,10 @@ const bn: Record<MessageKey, string> = {
   "player.dataUsed": "এই ভিজিটে ভিডিও ডেটা: {mb} MB",
   "settings.dataSaver": "ডেটা সেভার",
   "settings.dataSaverHint": "মোবাইল ডেটা কম খরচের জন্য ভিডিও সর্বোচ্চ ৩৬০p-তে চলবে। ফোনে ডেটা সেভার চালু থাকলে নিজে থেকেই চালু হয়।",
+  "card.reliable": "নির্ভরযোগ্য",
+  "card.unstable": "অস্থির",
+  "card.rating": "{pct}% দর্শক পছন্দ করেছেন",
+  "home.newlyAdded": "নতুন যোগ হয়েছে",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };

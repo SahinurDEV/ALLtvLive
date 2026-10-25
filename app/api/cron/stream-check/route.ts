@@ -9,6 +9,7 @@ import {
   type ProbeDoc,
   type ProbeOutcome,
 } from "@/lib/server/streamProbe";
+import { recordSeenChannels } from "@/lib/server/insights";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +45,12 @@ export async function GET(req: Request) {
     urlsByChannel.set(s.channel, list);
   }
   const allIds = [...urlsByChannel.keys()].sort();
+  let newlyAdded = 0;
+  try {
+    newlyAdded = await recordSeenChannels(db, allIds);
+  } catch {
+    // not critical
+  }
 
   // Viewer-reported suspects first, then previously failing ones, then rotation.
   const suspects = await db
@@ -130,5 +137,5 @@ export async function GET(req: Request) {
     .collection<{ _id: string; cursor: number; lastRunAt?: number }>(CRON_STATE_COLLECTION)
     .updateOne({ _id: "stream-check" }, { $set: { cursor, lastRunAt: now } }, { upsert: true });
 
-  return NextResponse.json({ ok: true, checked, queued: queue.length, results, ms: Date.now() - started });
+  return NextResponse.json({ ok: true, checked, queued: queue.length, results, newlyAdded, ms: Date.now() - started });
 }
