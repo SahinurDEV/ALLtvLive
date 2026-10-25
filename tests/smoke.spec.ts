@@ -97,3 +97,38 @@ test("dead channel shows next-channel and one-tap report", async ({ page }) => {
   await expect(overlay.getByTestId("report-dead")).toBeDisabled();
   await noSideScroll(page);
 });
+
+test("PWA manifest, icons and service worker are served", async ({ request }) => {
+  const res = await request.get("/manifest.json");
+  expect(res.status()).toBe(200);
+  const m = await res.json();
+  expect(m.display).toBe("standalone");
+  for (const icon of m.icons) {
+    expect((await request.get(icon.src)).status(), icon.src).toBe(200);
+  }
+  expect(m.icons.some((i: { purpose?: string }) => i.purpose === "maskable")).toBeTruthy();
+  const sw = await request.get("/sw.js");
+  expect(sw.status()).toBe(200);
+  expect(await sw.text()).toContain("addEventListener(\"fetch\"");
+  expect((await request.get("/apple-touch-icon.png")).status()).toBe(200);
+});
+
+test("iOS Safari gets add-to-home-screen steps that stay dismissed", async ({ browser }) => {
+  const ctx = await browser.newContext({
+    viewport: { width: 375, height: 812 },
+    userAgent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+  });
+  const page = await ctx.newPage();
+  await page.goto("/watch");
+  const prompt = page.getByTestId("install-prompt");
+  await expect(prompt).toBeVisible({ timeout: 15_000 });
+  await expect(prompt).toContainText("Add to Home Screen");
+  await noSideScroll(page);
+  await prompt.getByRole("button", { name: "Not now" }).click();
+  await expect(prompt).toHaveCount(0);
+  await page.reload();
+  await page.waitForTimeout(6000);
+  await expect(prompt).toHaveCount(0);
+  await ctx.close();
+});
