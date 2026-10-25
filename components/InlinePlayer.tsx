@@ -59,6 +59,7 @@ import { PlayerShell } from "@/components/player/PlayerShell";
 import { logViewEvent } from "@/lib/history/viewLogger";
 import { RatingButtons } from "@/components/RatingButtons";
 import { toast } from "sonner";
+import { prefetchChannel } from "@/lib/player/prefetch";
 import { ShareSheet } from "@/components/ShareSheet";
 import { addWatchSeconds } from "@/lib/history/watchTime";
 
@@ -303,6 +304,13 @@ export function InlinePlayer() {
       total: allChannels.length,
     };
   }, [currentChannel, channelPos, allChannels, neighborIndex]);
+
+  // Faster zapping: once the current channel plays, warm up the next one.
+  useEffect(() => {
+    if (!isPlaying || settings.dataSaver || !neighbors) return;
+    const timer = setTimeout(() => prefetchChannel(neighbors.next), 3000);
+    return () => clearTimeout(timer);
+  }, [isPlaying, neighbors, settings.dataSaver]);
 
   // "Last channel" (like a TV remote's recall button)
   const prevChannelRef = useRef<ChannelWithMeta | null>(null);
