@@ -48,14 +48,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       url,
-      images: meta.logo ? [{ url: meta.logo }] : undefined,
+      images: [{ url: `${SITE_URL}/og/${encodeURIComponent(meta.id)}`, width: 1200, height: 630, alt: title }],
       type: "video.other",
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title,
       description,
-      images: meta.logo ? [meta.logo] : undefined,
+      images: [`${SITE_URL}/og/${encodeURIComponent(meta.id)}`],
     },
   };
 }

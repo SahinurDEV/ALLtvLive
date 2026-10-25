@@ -59,6 +59,7 @@ import { PlayerShell } from "@/components/player/PlayerShell";
 import { logViewEvent } from "@/lib/history/viewLogger";
 import { RatingButtons } from "@/components/RatingButtons";
 import { toast } from "sonner";
+import { ShareSheet } from "@/components/ShareSheet";
 import { addWatchSeconds } from "@/lib/history/watchTime";
 
 const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
@@ -593,12 +594,12 @@ export function InlinePlayer() {
 
   const handleShare = useCallback(async () => {
     if (!currentChannel) return;
-    const url = `${window.location.origin}/${currentChannel.id}`;
+    const url = `${window.location.origin}/${encodeURIComponent(currentChannel.id)}`;
     if (navigator.share) {
       try {
         await navigator.share({
           title: currentChannel.name,
-          text: `Watch ${currentChannel.name} live on ALLtvLive`,
+          text: t("share.text", { name: currentChannel.name }),
           url,
         });
         return;
@@ -606,13 +607,9 @@ export function InlinePlayer() {
         // fall through to clipboard
       }
     }
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copied to clipboard");
-    } catch {
-      toast.error("Couldn't copy link");
-    }
-  }, [currentChannel]);
+    setShareUrl(url);
+  }, [currentChannel, t]);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
 
   const setSleepMinutes = useCallback((minutes: number) => {
     if (minutes <= 0) {
@@ -1486,6 +1483,10 @@ export function InlinePlayer() {
           )}
         </div>
         </div>
+
+        {shareUrl && (
+          <ShareSheet url={shareUrl} title={currentChannel.name} onClose={() => setShareUrl(null)} />
+        )}
 
         {/* Channel Info Panel */}
         <div className="flex-1 p-3 sm:p-3.5 md:p-4 flex flex-col min-w-0 overflow-hidden">

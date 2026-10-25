@@ -189,6 +189,11 @@ const en = {
   "sports.loading": "Loading today's games…",
   "sports.back": "Back to TV",
   "nav.sports": "Sports hub",
+  "share.title": "Share this channel",
+  "share.text": "Watch {name} live on ALLtvLive",
+  "share.copy": "Copy link",
+  "share.copied": "Link copied",
+  "share.copyFailed": "Couldn't copy the link",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -372,6 +377,11 @@ const bn: Record<MessageKey, string> = {
   "sports.loading": "আজকের খেলা লোড হচ্ছে…",
   "sports.back": "টিভিতে ফিরুন",
   "nav.sports": "স্পোর্টস হাব",
+  "share.title": "চ্যানেলটি শেয়ার করুন",
+  "share.text": "ALLtvLive-এ {name} লাইভ দেখুন",
+  "share.copy": "লিংক কপি",
+  "share.copied": "লিংক কপি হয়েছে",
+  "share.copyFailed": "লিংক কপি করা যায়নি",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };
