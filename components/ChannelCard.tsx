@@ -2,7 +2,9 @@
 
 import { memo, useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Play, Heart, Users, Radio } from "lucide-react";
+import { Play, Heart, Users, Radio, ShieldCheck, AlertTriangle, ThumbsUp } from "lucide-react";
+import { useChannelInsights } from "@/hooks/useChannelInsights";
+import { useT } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ChannelWithMeta } from "@/lib/types";
@@ -23,6 +25,10 @@ export const ChannelCard = memo(function ChannelCard({
   const toggleFavorite = useAppStore((s) => s.toggleFavorite);
   const favorites = useAppStore((s) => s.favorites);
   const isFav = favorites.includes(channel.id);
+  const t = useT();
+  const insights = useChannelInsights();
+  const reliability = insights.reliability[channel.id];
+  const rating = insights.rating[channel.id] as number | undefined;
   const [imgError, setImgError] = useState(false);
   const [health, setHealth] = useState<HealthStatus>("unknown");
 
@@ -133,6 +139,28 @@ export const ChannelCard = memo(function ChannelCard({
               </span>
             )}
           </div>
+          {(reliability || rating !== undefined) && (
+            <div className="flex flex-wrap items-center gap-1.5 mt-1.5" data-testid="card-insights">
+              {reliability === "good" && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  <ShieldCheck className="h-2.5 w-2.5" />
+                  {t("card.reliable")}
+                </span>
+              )}
+              {reliability === "poor" && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                  <AlertTriangle className="h-2.5 w-2.5" />
+                  {t("card.unstable")}
+                </span>
+              )}
+              {rating !== undefined && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground" aria-label={t("card.rating", { pct: rating })}>
+                  <ThumbsUp className="h-2.5 w-2.5" />
+                  {rating}%
+                </span>
+              )}
+            </div>
+          )}
           {channel.categories?.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {channel.categories.slice(0, 2).map((cat) => (

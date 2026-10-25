@@ -15,6 +15,7 @@ import { TrendingRow } from "@/components/home/TrendingRow";
 import { QuickFilterChips } from "@/components/home/QuickFilterChips";
 import { PinGateDialog } from "@/components/settings/PinGateDialog";
 import { isChannelLocked } from "@/lib/store";
+import { NewlyAddedRow } from "@/components/home/NewlyAddedRow";
 import { TimeOfDayRow } from "@/components/home/TimeOfDayRow";
 import { FeaturedRow } from "@/components/home/FeaturedRow";
 import { WatchHeroBar } from "@/components/home/WatchHeroBar";
@@ -407,6 +408,8 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
                     <ForYouRow allChannels={allChannels} />
 
                     <TimeOfDayRow allChannels={allChannels} />
+
+                    <NewlyAddedRow allChannels={allChannels} />
 
                     <FeaturedRow channels={featuredChannels} />
 
