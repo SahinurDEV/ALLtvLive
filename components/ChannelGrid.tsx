@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { ChannelCard } from "./ChannelCard";
 import { ChannelCardSkeleton } from "./ChannelCardSkeleton";
 import { Button } from "@/components/ui/button";
@@ -108,6 +108,21 @@ export function ChannelGrid({
     setVisibleCount((prev) => prev + pageSize);
   }, [pageSize]);
 
+  // Infinite scroll: load the next page shortly before the button scrolls in.
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !showLoadMore || !hasMore || typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMore();
+      },
+      { rootMargin: "600px 0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [showLoadMore, hasMore, loadMore, visibleCount]);
+
   if (isLoading) {
     return (
       <div>
@@ -204,7 +219,7 @@ export function ChannelGrid({
       )}
 
       {showLoadMore && hasMore && (
-        <div className="flex justify-center mt-8">
+        <div ref={sentinelRef} className="flex justify-center mt-8" data-testid="grid-sentinel">
           <Button
             variant="outline"
             size="lg"
