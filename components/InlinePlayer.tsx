@@ -47,6 +47,8 @@ import { Badge } from "@/components/ui/badge";
 import { useAppStore } from "@/lib/store";
 import { getPlaceholderLogo, formatViewerCount } from "@/lib/utils";
 import { useUniversalPlayer } from "@/lib/player/useUniversalPlayer";
+import { useT } from "@/lib/i18n";
+import { MiniGuideStrip } from "@/components/player/MiniGuideStrip";
 import { PlayerShell } from "@/components/player/PlayerShell";
 import { logViewEvent } from "@/lib/history/viewLogger";
 import { RatingButtons } from "@/components/RatingButtons";
@@ -85,6 +87,7 @@ export function InlinePlayer() {
     toggleTheaterMode,
   } = useAppStore();
 
+  const t = useT();
   const playerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -197,6 +200,36 @@ export function InlinePlayer() {
     },
     [currentChannel, allChannels, openPlayer]
   );
+
+  // Mini guide strip: shown briefly after every zap so viewers see where they are.
+  const [guideVisible, setGuideVisible] = useState(false);
+  const guideTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const flashGuide = useCallback(() => {
+    setGuideVisible(true);
+    clearTimeout(guideTimerRef.current);
+    guideTimerRef.current = setTimeout(() => setGuideVisible(false), 3000);
+  }, []);
+  useEffect(() => () => clearTimeout(guideTimerRef.current), []);
+  const zap = useCallback(
+    (direction: "next" | "prev") => {
+      navigateChannel(direction);
+      flashGuide();
+    },
+    [navigateChannel, flashGuide]
+  );
+  const playerHoverRef = useRef(false);
+  const neighbors = useMemo(() => {
+    if (!currentChannel || allChannels.length < 2) return null;
+    const idx = allChannels.findIndex((ch) => ch.id === currentChannel.id);
+    if (idx === -1) return null;
+    const n = allChannels.length;
+    return {
+      prev: allChannels[(idx - 1 + n) % n],
+      next: allChannels[(idx + 1) % n],
+      position: idx + 1,
+      total: n,
+    };
+  }, [currentChannel, allChannels]);
 
   // "Last channel" (like a TV remote's recall button)
   const prevChannelRef = useRef<ChannelWithMeta | null>(null);
@@ -418,14 +451,14 @@ export function InlinePlayer() {
         case "ChannelDown":
         case "MediaTrackNext":
           e.preventDefault();
-          navigateChannel("next");
+          zap("next");
           break;
         case "p":
         case "PageUp":
         case "ChannelUp":
         case "MediaTrackPrevious":
           e.preventDefault();
-          navigateChannel("prev");
+          zap("prev");
           break;
         case "l":
         case "L":
@@ -443,11 +476,25 @@ export function InlinePlayer() {
           setShowShortcuts((v) => !v);
           break;
         case "ArrowUp":
+        case "ArrowDown": {
+          // Only zap when the player is the thing being used (hovered, focused
+          // or fullscreen); otherwise arrows keep scrolling the page.
+          const el = playerRef.current;
+          const active =
+            !!document.fullscreenElement ||
+            playerHoverRef.current ||
+            (!!el && el.contains(document.activeElement));
+          if (!active) break;
           e.preventDefault();
+          zap(e.key === "ArrowDown" ? "next" : "prev");
+          break;
+        }
+        case "+":
+        case "=":
           changeVolume(Math.min(100, volume + 5));
           break;
-        case "ArrowDown":
-          e.preventDefault();
+        case "-":
+        case "_":
           changeVolume(Math.max(0, volume - 5));
           break;
         case "Escape":
@@ -467,7 +514,7 @@ export function InlinePlayer() {
     changeVolume,
     toggleTheaterMode,
     handleScreenshot,
-    navigateChannel,
+    zap,
     cyclePlaybackRate,
     recallLastChannel,
   ]);
@@ -478,24 +525,30 @@ export function InlinePlayer() {
     controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
   }, []);
 
-  // Touch swipe for next/prev channel
-  const touchStartX = useRef<number | null>(null);
+  // Touch swipe: up = next channel, down = previous (left/right also work).
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     setShowControls(true);
     clearTimeout(controlsTimeoutRef.current);
     controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 4000);
   }, []);
   const handleTouchEnd = useCallback(
     (e: React.TouchEvent) => {
-      if (touchStartX.current === null) return;
-      const dx = e.changedTouches[0].clientX - touchStartX.current;
-      touchStartX.current = null;
-      const THRESHOLD = 60;
-      if (dx > THRESHOLD) navigateChannel("prev");
-      else if (dx < -THRESHOLD) navigateChannel("next");
+      if (!touchStart.current) return;
+      const dx = e.changedTouches[0].clientX - touchStart.current.x;
+      const dy = e.changedTouches[0].clientY - touchStart.current.y;
+      touchStart.current = null;
+      const THRESHOLD = 50;
+      if (Math.abs(dy) > Math.abs(dx)) {
+        if (dy < -THRESHOLD) zap("next");
+        else if (dy > THRESHOLD) zap("prev");
+      } else {
+        if (dx > THRESHOLD) zap("prev");
+        else if (dx < -THRESHOLD) zap("next");
+      }
     },
-    [navigateChannel]
+    [zap]
   );
 
   const streamQuality = activeSource?.quality || null;
@@ -551,12 +604,22 @@ export function InlinePlayer() {
       <div className="flex flex-col md:flex-row">
         <div
           ref={playerRef}
-          className={`relative ${playerWidthClass} aspect-video bg-black shrink-0`}
+          className={`relative ${playerWidthClass} aspect-video bg-black shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-neon focus-visible:ring-inset`}
           onMouseMove={resetControlsTimeout}
-          onMouseLeave={() => setShowControls(false)}
-          onMouseEnter={() => setShowControls(true)}
+          onMouseLeave={() => {
+            playerHoverRef.current = false;
+            setShowControls(false);
+          }}
+          onMouseEnter={() => {
+            playerHoverRef.current = true;
+            setShowControls(true);
+          }}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
+          onFocus={flashGuide}
+          tabIndex={0}
+          aria-label={t("zap.hint")}
+          style={{ touchAction: "pinch-zoom" }}
         >
           <PlayerShell
             ref={videoRef}
@@ -655,7 +718,7 @@ export function InlinePlayer() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => navigateChannel("prev")}
+                      onClick={() => zap("prev")}
                       className="text-white hover:bg-white/10 active:bg-white/20 h-8 w-8 md:h-7 md:w-7"
                       aria-label="Previous channel"
                     >
@@ -677,7 +740,7 @@ export function InlinePlayer() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => navigateChannel("next")}
+                      onClick={() => zap("next")}
                       className="text-white hover:bg-white/10 active:bg-white/20 h-8 w-8 md:h-7 md:w-7"
                       aria-label="Next channel"
                     >
@@ -1008,6 +1071,20 @@ export function InlinePlayer() {
             </div>
           )}
 
+          {/* Mini guide strip: previous / current / next channel */}
+          {neighbors && !isYouTube && (
+            <MiniGuideStrip
+              visible={guideVisible}
+              prev={neighbors.prev}
+              next={neighbors.next}
+              current={currentChannel}
+              position={neighbors.position}
+              total={neighbors.total}
+              onPrev={() => zap("prev")}
+              onNext={() => zap("next")}
+            />
+          )}
+
           {/* Keyboard shortcuts overlay */}
           <AnimatePresence>
             {showShortcuts && (
@@ -1041,10 +1118,10 @@ export function InlinePlayer() {
                     <Shortcut k="F" desc="Fullscreen" />
                     <Shortcut k="T" desc="Theater mode" />
                     <Shortcut k="S" desc="Screenshot" />
-                    <Shortcut k="N / PgDn" desc="Next channel" />
-                    <Shortcut k="P / PgUp" desc="Previous channel" />
+                    <Shortcut k="↓ / N / PgDn" desc="Next channel" />
+                    <Shortcut k="↑ / P / PgUp" desc="Previous channel" />
                     <Shortcut k="L" desc="Last channel" />
-                    <Shortcut k="↑ / ↓" desc="Volume ±5%" />
+                    <Shortcut k="+ / −" desc="Volume ±5%" />
                     <Shortcut k="> / <" desc="Speed ± step" />
                     <Shortcut k="?" desc="Toggle this menu" />
                   </div>
@@ -1271,7 +1348,7 @@ export function InlinePlayer() {
             <Button
               variant="neon"
               size="sm"
-              onClick={() => navigateChannel("next")}
+              onClick={() => zap("next")}
               className="gap-1 rounded-full text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3 ml-auto"
               aria-label="Play next channel"
             >

@@ -58,3 +58,22 @@ test("continue watching row can be cleared", async ({ page }) => {
   expect(stored === null || stored === "[]").toBeTruthy();
   await noSideScroll(page);
 });
+
+test("arrow keys on the focused player switch channel and show the mini guide", async ({ page }) => {
+  await page.goto("/watch");
+  const player = page.locator("#main-player [tabindex='0']").first();
+  try {
+    await player.waitFor({ timeout: 20_000 });
+    await page.getByTestId("continue-watching").waitFor({ timeout: 20_000 });
+  } catch {
+    test.skip(true, "catalog unavailable");
+  }
+  const before = await page.evaluate(() => localStorage.getItem("alltvlive-history"));
+  await player.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByTestId("mini-guide")).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("alltvlive-history")))
+    .not.toBe(before);
+  await noSideScroll(page);
+});
