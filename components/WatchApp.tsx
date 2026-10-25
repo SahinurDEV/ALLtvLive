@@ -13,6 +13,8 @@ import { ContinueWatchingRow } from "@/components/home/ContinueWatchingRow";
 import { ForYouRow } from "@/components/home/ForYouRow";
 import { TrendingRow } from "@/components/home/TrendingRow";
 import { QuickFilterChips } from "@/components/home/QuickFilterChips";
+import { PinGateDialog } from "@/components/settings/PinGateDialog";
+import { isChannelLocked } from "@/lib/store";
 import { TimeOfDayRow } from "@/components/home/TimeOfDayRow";
 import { FeaturedRow } from "@/components/home/FeaturedRow";
 import { WatchHeroBar } from "@/components/home/WatchHeroBar";
@@ -178,13 +180,14 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
       return;
     }
 
-    const pickFrom = (list: typeof allChannels) => {
+    const pickFrom = (all: typeof allChannels) => {
+      const list = all.filter((c) => !isChannelLocked(c, settings));
       if (list.length === 0) return null;
       return list[Math.floor(Math.random() * list.length)];
     };
 
     // 1. Primary channel wins — admin has pinned a specific channel to play first
-    if (primaryChannel) {
+    if (primaryChannel && !isChannelLocked(primaryChannel, settings)) {
       hasAutoPlayed.current = true;
       openPlayer(primaryChannel);
       return;
@@ -514,6 +517,7 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
 
       {/* Global overlays */}
       <SettingsSheet />
+      <PinGateDialog />
       <ReportBrokenStreamDialog />
       <CustomChannelDialog />
       <InstallPrompt />
