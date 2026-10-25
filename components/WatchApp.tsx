@@ -18,7 +18,6 @@ import { WatchHeroBar } from "@/components/home/WatchHeroBar";
 import { DiscoverCategoryTiles } from "@/components/home/DiscoverCategoryTiles";
 import { SettingsSheet } from "@/components/settings/SettingsSheet";
 import { ReportBrokenStreamDialog } from "@/components/ReportBrokenStreamDialog";
-import { FloatingMiniPlayer } from "@/components/player/FloatingMiniPlayer";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { useChannels } from "@/hooks/useChannels";
 import { useFeatured } from "@/hooks/useFeatured";
@@ -336,7 +335,7 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
             </div>
           ) : (
             <div className="max-w-[1800px] mx-auto">
-              <div className="sticky top-0 z-30 p-2 sm:p-3 md:p-4 lg:p-6 pb-2 md:pb-3 bg-background/95 backdrop-blur space-y-2 sm:space-y-3">
+              <div className="relative lg:sticky lg:top-0 z-30 p-2 sm:p-3 md:p-4 lg:p-6 pb-2 md:pb-3 bg-background/95 lg:backdrop-blur space-y-2 sm:space-y-3">
                 {!theaterMode && (
                   <WatchHeroBar
                     totalChannels={allChannels.length}
@@ -514,7 +513,6 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
       <SettingsSheet />
       <ReportBrokenStreamDialog />
       <CustomChannelDialog />
-      <FloatingMiniPlayer />
       <InstallPrompt />
     </div>
   );
