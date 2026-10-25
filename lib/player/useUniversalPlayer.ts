@@ -58,6 +58,8 @@ export function useUniversalPlayer({
   );
 
   const [sourceIndex, setSourceIndex] = useState(0);
+  // Bumped to force the load effect to re-run for the same source (retries).
+  const [reloadNonce, setReloadNonce] = useState(0);
   const [phase, setPhase] = useState<PlayerPhase>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // HTTP status of the last failed source and how many sources were refused
@@ -190,8 +192,9 @@ export function useUniversalPlayer({
         const backoff = attemptsRef.current === 1 ? 1000 : 3000;
         retryTimeoutRef.current = setTimeout(() => {
           setPhase("loading");
-          // re-run the load effect by nudging state — force reload same source
-          setSourceIndex((i) => i);
+          // Re-run the load effect for the same source. (Setting sourceIndex to
+          // the same value doesn't re-render, which left the player stuck.)
+          setReloadNonce((n) => n + 1);
         }, backoff);
         return;
       }
@@ -320,7 +323,7 @@ export function useUniversalPlayer({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [channel?.id, activeSource?.url, activeSource?.type]);
+  }, [channel?.id, activeSource?.url, activeSource?.type, reloadNonce]);
 
   // Clean up on unmount
   useEffect(() => {
@@ -342,7 +345,9 @@ export function useUniversalPlayer({
     attemptsRef.current = 0;
     setPhase("loading");
     setErrorMessage(null);
+    refusedCountRef.current = 0;
     setSourceIndex(0);
+    setReloadNonce((n) => n + 1);
   }, []);
 
   const tryNextSource = useCallback(() => {

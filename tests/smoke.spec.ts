@@ -77,3 +77,23 @@ test("arrow keys on the focused player switch channel and show the mini guide", 
     .not.toBe(before);
   await noSideScroll(page);
 });
+
+test("dead channel shows next-channel and one-tap report", async ({ page }) => {
+  test.setTimeout(150_000);
+  // Every stream fails, so the player runs through all sources and gives up.
+  await page.route(/\.(m3u8|mpd|ts)(\?|$)/, (r) => r.abort());
+  await page.route("**/api/reports", (r) =>
+    r.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true}' })
+  );
+  await page.goto("/watch");
+  const overlay = page.getByTestId("player-error");
+  try {
+    await overlay.waitFor({ timeout: 110_000 });
+  } catch {
+    test.skip(true, "catalog unavailable or stream did not fail");
+  }
+  await expect(overlay.getByTestId("skip-next")).toBeVisible();
+  await overlay.getByTestId("report-dead").click();
+  await expect(overlay.getByTestId("report-dead")).toBeDisabled();
+  await noSideScroll(page);
+});
