@@ -127,6 +127,12 @@ export function InlinePlayer() {
     retry,
     tryNextSource,
     errorMessage,
+    levels,
+    level,
+    setLevel,
+    audioTracks,
+    audioTrack,
+    setAudioTrack,
   } = useUniversalPlayer({
     channel: currentChannel,
     autoplay: settings.autoplay,
@@ -963,9 +969,53 @@ export function InlinePlayer() {
                             initial={{ opacity: 0, y: 6 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 6 }}
-                            className="absolute bottom-full right-0 mb-2 w-64 rounded-xl bg-black/95 backdrop-blur border border-white/10 shadow-2xl overflow-hidden z-40"
+                            className="fixed inset-x-2 bottom-20 max-h-[60vh] overflow-y-auto sm:absolute sm:inset-x-auto sm:bottom-full sm:right-0 sm:mb-2 sm:w-64 sm:max-h-[70vh] rounded-xl bg-black/95 backdrop-blur border border-white/10 shadow-2xl z-50"
                           >
                             <div className="p-2 space-y-1">
+                              {levels.length > 0 && (
+                                <div className="px-2 pt-1.5 pb-2 border-b border-white/10" data-testid="quality-menu">
+                                  <div className="text-[10px] font-semibold text-white/80 uppercase tracking-wider mb-1.5">
+                                    {t("player.quality")}
+                                  </div>
+                                  <div className="grid grid-cols-4 gap-1">
+                                    {[{ index: -1, height: 0 }, ...levels].map((l) => (
+                                      <button
+                                        key={l.index}
+                                        onClick={() => setLevel(l.index)}
+                                        className={`text-[10px] font-mono py-1 rounded transition-colors ${
+                                          level === l.index
+                                            ? "bg-neon text-black font-bold"
+                                            : "bg-white/5 text-white hover:bg-white/10"
+                                        }`}
+                                      >
+                                        {l.index === -1 ? t("player.qualityAuto") : `${l.height}p`}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {audioTracks.length > 0 && (
+                                <div className="px-2 pt-1.5 pb-2 border-b border-white/10">
+                                  <div className="text-[10px] font-semibold text-white/80 uppercase tracking-wider mb-1.5">
+                                    {t("player.audio")}
+                                  </div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {audioTracks.map((a) => (
+                                      <button
+                                        key={a.id}
+                                        onClick={() => setAudioTrack(a.id)}
+                                        className={`text-[10px] px-2 py-1 rounded transition-colors ${
+                                          audioTrack === a.id
+                                            ? "bg-neon text-black font-bold"
+                                            : "bg-white/5 text-white hover:bg-white/10"
+                                        }`}
+                                      >
+                                        {a.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                               {/* Playback speed */}
                               <div className="px-2 pt-1.5 pb-2 border-b border-white/10">
                                 <div className="flex items-center gap-1.5 mb-1.5">

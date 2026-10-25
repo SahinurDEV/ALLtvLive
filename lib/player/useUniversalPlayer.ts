@@ -18,6 +18,20 @@ interface UseUniversalPlayerOptions {
   channel: ChannelWithMeta | null;
   autoplay?: boolean;
   onFatalError?: (channelId: string) => void;
+  /** Data saver: cap automatic quality at this height (e.g. 360). */
+  maxAutoHeight?: number | null;
+}
+
+export interface QualityLevel {
+  index: number;
+  height: number;
+  bitrate: number;
+}
+
+export interface AudioTrackInfo {
+  id: number;
+  name: string;
+  lang: string | null;
 }
 
 interface UseUniversalPlayerResult {
@@ -35,6 +49,14 @@ interface UseUniversalPlayerResult {
   retry: () => void;
   tryNextSource: () => void;
   errorMessage: string | null;
+  /** HLS renditions, highest first. Empty for non-HLS or single-rendition streams. */
+  levels: QualityLevel[];
+  /** -1 = automatic */
+  level: number;
+  setLevel: (index: number) => void;
+  audioTracks: AudioTrackInfo[];
+  audioTrack: number;
+  setAudioTrack: (id: number) => void;
 }
 
 const LOAD_TIMEOUT_MS = 8000;
@@ -44,6 +66,7 @@ export function useUniversalPlayer({
   channel,
   autoplay = true,
   onFatalError,
+  maxAutoHeight = null,
 }: UseUniversalPlayerOptions): UseUniversalPlayerResult {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -62,6 +85,12 @@ export function useUniversalPlayer({
   const [reloadNonce, setReloadNonce] = useState(0);
   const [phase, setPhase] = useState<PlayerPhase>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [levels, setLevels] = useState<QualityLevel[]>([]);
+  const [level, setLevelState] = useState(-1);
+  const [audioTracks, setAudioTracks] = useState<AudioTrackInfo[]>([]);
+  const [audioTrack, setAudioTrackState] = useState(-1);
+  const maxAutoHeightRef = useRef(maxAutoHeight);
+  maxAutoHeightRef.current = maxAutoHeight;
   // HTTP status of the last failed source and how many sources were refused
   // (401/403/451), so the final message can say "blocked in your region".
   const lastStatusRef = useRef<number | null>(null);
@@ -226,6 +255,10 @@ export function useUniversalPlayer({
     teardownHls();
     setPhase("loading");
     setErrorMessage(null);
+    setLevels([]);
+    setLevelState(-1);
+    setAudioTracks([]);
+    setAudioTrackState(-1);
 
     const url = activeSource.url;
     const type = activeSource.type;
@@ -274,9 +307,26 @@ export function useUniversalPlayer({
         hls.attachMedia(video);
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          const lv = hls.levels
+            .map((l, i) => ({ index: i, height: l.height || 0, bitrate: l.bitrate || 0 }))
+            .filter((l) => l.height > 0)
+            .sort((a, b) => b.height - a.height || b.bitrate - a.bitrate);
+          setLevels(lv.length > 1 ? lv : []);
+          setLevelState(-1);
+          applyCap(hls);
           if (autoplay) {
             attemptAutoplay(video);
           }
+        });
+
+        hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
+          const tracks = hls.audioTracks.map((t, i) => ({
+            id: i,
+            name: t.name || t.lang || `Track ${i + 1}`,
+            lang: t.lang || null,
+          }));
+          setAudioTracks(tracks.length > 1 ? tracks : []);
+          setAudioTrackState(hls.audioTrack);
         });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -365,7 +415,44 @@ export function useUniversalPlayer({
     [sources.length]
   );
 
+  function applyCap(hls: Hls) {
+    const cap = maxAutoHeightRef.current;
+    if (!cap) {
+      hls.autoLevelCapping = -1;
+      return;
+    }
+    let best = -1;
+    hls.levels.forEach((l, i) => {
+      if (l.height && l.height <= cap && (best < 0 || l.height > hls.levels[best].height)) best = i;
+    });
+    hls.autoLevelCapping = best;
+  }
+
+  useEffect(() => {
+    if (hlsRef.current) applyCap(hlsRef.current);
+  }, [maxAutoHeight]);
+
+  const setLevel = useCallback((index: number) => {
+    const hls = hlsRef.current;
+    if (!hls) return;
+    hls.currentLevel = index; // -1 = auto
+    setLevelState(index);
+  }, []);
+
+  const setAudioTrack = useCallback((id: number) => {
+    const hls = hlsRef.current;
+    if (!hls) return;
+    hls.audioTrack = id;
+    setAudioTrackState(id);
+  }, []);
+
   return {
+    levels,
+    level,
+    setLevel,
+    audioTracks,
+    audioTrack,
+    setAudioTrack,
     videoRef,
     phase,
     activeSource,
