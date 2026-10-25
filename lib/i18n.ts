@@ -106,6 +106,11 @@ const en = {
   "fav.drag": "Drag to reorder",
   "fav.moveUp": "Move up",
   "fav.moveDown": "Move down",
+  "home.forYou": "For You",
+  "home.daypart.morning": "Good morning: start your day",
+  "home.daypart.afternoon": "Afternoon picks",
+  "home.daypart.evening": "Tonight: sports, movies and more",
+  "home.daypart.night": "Late night: movies and music",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -206,6 +211,11 @@ const bn: Record<MessageKey, string> = {
   "fav.drag": "ক্রম বদলাতে টানুন",
   "fav.moveUp": "উপরে নিন",
   "fav.moveDown": "নিচে নিন",
+  "home.forYou": "আপনার জন্য",
+  "home.daypart.morning": "শুভ সকাল: দিন শুরু করুন",
+  "home.daypart.afternoon": "দুপুরের বাছাই",
+  "home.daypart.evening": "আজ সন্ধ্যায়: খেলা, সিনেমা আর আরও",
+  "home.daypart.night": "গভীর রাত: সিনেমা আর গান",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };
