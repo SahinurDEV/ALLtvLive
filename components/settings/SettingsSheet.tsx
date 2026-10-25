@@ -163,6 +163,44 @@ export function SettingsSheet() {
                 </label>
               </section>
 
+              {/* Text size and easy mode */}
+              <section data-testid="text-size">
+                <h3 className="font-semibold text-sm mb-2">{t("settings.textSize")}</h3>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { v: 1, k: "settings.textNormal" as const },
+                    { v: 1.125, k: "settings.textLarge" as const },
+                    { v: 1.25, k: "settings.textXL" as const },
+                  ].map((o) => (
+                    <button
+                      key={o.v}
+                      type="button"
+                      aria-pressed={settings.fontScale === o.v}
+                      onClick={() => updateSettings({ fontScale: o.v })}
+                      className={`h-10 rounded-lg border text-sm ${
+                        settings.fontScale === o.v ? "border-neon bg-neon/10 text-neon" : "border-border/50"
+                      }`}
+                      style={{ fontSize: `${o.v * 0.875}rem` }}
+                    >
+                      {t(o.k)}
+                    </button>
+                  ))}
+                </div>
+                <label className="mt-2 flex items-center justify-between px-3 py-2.5 rounded-lg border border-border/50 cursor-pointer hover:bg-secondary/50">
+                  <div className="text-sm">
+                    <div className="font-medium">{t("settings.easyMode")}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{t("settings.easyModeHint")}</div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.easyMode}
+                    onChange={(e) => updateSettings({ easyMode: e.target.checked })}
+                    className="h-5 w-5 accent-neon shrink-0"
+                    aria-label={t("settings.easyMode")}
+                  />
+                </label>
+              </section>
+
               {/* Data saver */}
               <section>
                 <label className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border/50 cursor-pointer hover:bg-secondary/50">

@@ -159,6 +159,12 @@ const en = {
   "profiles.name": "Profile name",
   "profiles.add": "Add profile",
   "profiles.addKids": "Add Kids profile",
+  "settings.textSize": "Text size",
+  "settings.textNormal": "Normal",
+  "settings.textLarge": "Large",
+  "settings.textXL": "Extra large",
+  "settings.easyMode": "Easy mode",
+  "settings.easyModeHint": "Bigger buttons and a simpler home page",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -312,6 +318,12 @@ const bn: Record<MessageKey, string> = {
   "profiles.name": "প্রোফাইলের নাম",
   "profiles.add": "প্রোফাইল যোগ করুন",
   "profiles.addKids": "Kids প্রোফাইল যোগ করুন",
+  "settings.textSize": "লেখার আকার",
+  "settings.textNormal": "স্বাভাবিক",
+  "settings.textLarge": "বড়",
+  "settings.textXL": "অনেক বড়",
+  "settings.easyMode": "সহজ মোড",
+  "settings.easyModeHint": "বড় বাটন আর সহজ হোম পেজ",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };
