@@ -43,6 +43,7 @@ import {
   ChevronRight,
   Maximize,
   X,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -292,11 +293,38 @@ export function InlinePlayer() {
     }
     lastSeenRef.current = currentChannel;
   }, [currentChannel]);
+  const historyIds = useAppStore((s) => s.historyIds);
+  const lastChannel = useMemo(() => {
+    if (prevChannelRef.current && prevChannelRef.current.id !== currentChannel?.id) return prevChannelRef.current;
+    const id = historyIds.find((h) => h !== currentChannel?.id);
+    return id ? allChannels.find((c) => c.id === id) ?? null : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historyIds, currentChannel?.id, allChannels]);
   const recallLastChannel = useCallback(() => {
-    const prev = prevChannelRef.current;
-    if (prev) openPlayer(prev);
-    else toast.info("No previous channel yet");
-  }, [openPlayer]);
+    if (lastChannel) openPlayer(lastChannel);
+    else toast.info(t("player.noLast"));
+  }, [openPlayer, lastChannel, t]);
+
+  // Number keys: type a channel number (like a TV remote), jump after a pause.
+  const [numberEntry, setNumberEntry] = useState("");
+  const numberTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pushDigit = useCallback(
+    (d: string) => {
+      setNumberEntry((cur) => {
+        const next = (cur + d).slice(0, 5);
+        if (numberTimerRef.current) clearTimeout(numberTimerRef.current);
+        numberTimerRef.current = setTimeout(() => {
+          setNumberEntry("");
+          const n = parseInt(next, 10);
+          const target = n >= 1 ? allChannels[n - 1] : undefined;
+          if (target) openPlayer(target);
+          else toast.info(t("player.noChannelNumber", { n: next }));
+        }, 1500);
+        return next;
+      });
+    },
+    [allChannels, openPlayer, t]
+  );
 
   // Cast to a TV: Remote Playback API (Chrome/Android: Chromecast) or
   // Safari's AirPlay picker. No SDK or API key required.
@@ -488,6 +516,10 @@ export function InlinePlayer() {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (/^[0-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        pushDigit(e.key);
+        return;
+      }
       switch (e.key) {
         case " ":
           e.preventDefault();
@@ -576,6 +608,7 @@ export function InlinePlayer() {
     zap,
     cyclePlaybackRate,
     recallLastChannel,
+    pushDigit,
   ]);
 
   const resetControlsTimeout = useCallback(() => {
@@ -706,6 +739,13 @@ export function InlinePlayer() {
             nextChannelName={neighbors?.next.name}
             autoSkip={autoNext}
           />
+
+          {numberEntry && (
+            <div className="absolute top-2 right-2 z-30 px-3 py-1 rounded-lg bg-black/80 text-neon font-mono text-2xl font-bold border border-neon/40" data-testid="number-entry" aria-live="polite">
+              {numberEntry}
+              <span className="animate-pulse">_</span>
+            </div>
+          )}
 
           {/* Watch time badge — top-left, always visible when playing */}
           {isPlaying && !isYouTube && (
@@ -1238,6 +1278,7 @@ export function InlinePlayer() {
                     <Shortcut k="L" desc="Last channel" />
                     <Shortcut k="+ / −" desc="Volume ±5%" />
                     <Shortcut k="> / <" desc="Speed ± step" />
+                    <Shortcut k="0-9" desc={t("player.numberHint")} />
                     <Shortcut k="?" desc="Toggle this menu" />
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-4 pt-3 border-t border-border/50 text-center">
@@ -1489,11 +1530,25 @@ export function InlinePlayer() {
               <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
               {theaterMode ? "Exit theater" : "Theater"}
             </Button>
+            {lastChannel && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={recallLastChannel}
+                className="gap-1 rounded-full text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3 ml-auto max-w-[9rem]"
+                aria-label={`${t("player.last")}: ${lastChannel.name}`}
+                title={`${t("player.last")} (L)`}
+                data-testid="last-channel"
+              >
+                <History className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0" />
+                <span className="truncate">{t("player.last")}</span>
+              </Button>
+            )}
             <Button
               variant="neon"
               size="sm"
               onClick={() => zap("next")}
-              className="gap-1 rounded-full text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3 ml-auto"
+              className={`gap-1 rounded-full text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3 ${lastChannel ? "" : "ml-auto"}`}
               aria-label="Play next channel"
             >
               <SkipForward className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
