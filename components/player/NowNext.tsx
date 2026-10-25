@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
+import { ReminderBell } from "@/components/ReminderBell";
 import { CalendarClock, ChevronDown } from "lucide-react";
 import type { ChannelWithMeta } from "@/lib/types";
 import { useT } from "@/lib/i18n";
@@ -81,10 +82,11 @@ export function NowNext({ channel }: { channel: ChannelWithMeta }) {
           {list.map((p) => (
             <li key={p.start} className="flex gap-2">
               <span className="text-muted-foreground font-mono shrink-0">{fmt(p.start)}</span>
-              <span className="min-w-0">
+              <span className="min-w-0 flex-1">
                 <span className="text-foreground">{p.title}</span>
                 {p.desc && <span className="block text-muted-foreground line-clamp-2">{p.desc}</span>}
               </span>
+              <ReminderBell channelId={channel.id} channelName={channel.name} title={p.title} start={p.start} />
             </li>
           ))}
           <li className="text-[10px] text-muted-foreground pt-1">Guide data: epg.pw (free XMLTV), matched by channel name</li>

@@ -13,6 +13,7 @@ import { ContinueWatchingRow } from "@/components/home/ContinueWatchingRow";
 import { ForYouRow } from "@/components/home/ForYouRow";
 import { TrendingRow } from "@/components/home/TrendingRow";
 import { QuickFilterChips } from "@/components/home/QuickFilterChips";
+import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { PinGateDialog } from "@/components/settings/PinGateDialog";
 import { isChannelLocked } from "@/lib/store";
 import { NewlyAddedRow } from "@/components/home/NewlyAddedRow";
@@ -534,6 +535,7 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
       {/* Global overlays */}
       <SettingsSheet />
       <PinGateDialog />
+      <ReminderWatcher />
       <ReportBrokenStreamDialog />
       <CustomChannelDialog />
       <InstallPrompt />

@@ -126,3 +126,50 @@ export async function lookupGuide(country: string, names: string[]): Promise<Pro
   }
   return null;
 }
+
+export interface SportsListing extends Programme {
+  channelId: string;
+  channelName: string;
+  logo: string | null;
+  country: string;
+}
+
+/**
+ * Today's programmes on sports channels for a few guide countries, live ones
+ * first. Channels are matched by name like the player guide.
+ */
+export async function sportsToday(
+  countries: string[],
+  channels: Array<{ id: string; name: string; alt_names?: string[]; country: string; logo: string | null }>,
+  horizonMs = 24 * 60 * 60 * 1000
+): Promise<SportsListing[]> {
+  const now = Date.now();
+  const out: SportsListing[] = [];
+  for (const raw of countries) {
+    const cc = raw.toUpperCase() === "UK" ? "GB" : raw.toUpperCase();
+    if (!EPG_COUNTRIES.has(cc)) continue;
+    let idx: CountryIndex;
+    try {
+      idx = await getCountry(cc);
+    } catch {
+      continue;
+    }
+    for (const ch of channels) {
+      const chCc = ch.country.toUpperCase() === "UK" ? "GB" : ch.country.toUpperCase();
+      if (chCc !== cc) continue;
+      for (const name of [ch.name, ...(ch.alt_names || [])]) {
+        const ids = idx.byName.get(normalizeName(name)) || [];
+        const list = ids.flatMap((id) => idx.programmes.get(id) || []);
+        if (list.length === 0) continue;
+        for (const p of list) {
+          if (p.stop <= now || p.start > now + horizonMs) continue;
+          out.push({ ...p, channelId: ch.id, channelName: ch.name, logo: ch.logo, country: cc });
+        }
+        break;
+      }
+    }
+  }
+  const live = (p: Programme) => p.start <= now && p.stop > now;
+  out.sort((a, b) => Number(live(b)) - Number(live(a)) || a.start - b.start);
+  return out.slice(0, 200);
+}
