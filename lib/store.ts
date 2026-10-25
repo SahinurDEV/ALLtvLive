@@ -25,6 +25,26 @@ export interface UserSettings {
   kidsMode: boolean;
   /** Optional 4-digit PIN needed to turn kids mode off (local soft lock) */
   kidsPin: string | null;
+  /** Categories that need the parental PIN before a channel plays */
+  lockedCategories: string[];
+  /** 4-digit parental PIN (local soft lock) */
+  parentalPin: string | null;
+}
+
+export const DEFAULT_SETTINGS: UserSettings = {
+  autoplay: true,
+  viewMode: "grid",
+  hideBrokenChannels: true,
+  kidsMode: false,
+  kidsPin: null,
+  lockedCategories: [],
+  parentalPin: null,
+};
+
+/** True when this channel is in a PIN-locked category. */
+export function isChannelLocked(channel: { categories?: string[] }, settings: UserSettings): boolean {
+  if (!settings.parentalPin || settings.lockedCategories.length === 0) return false;
+  return (channel.categories || []).some((c) => settings.lockedCategories.includes(c));
 }
 
 const SETTINGS_KEY = "alltvlive-settings";
@@ -32,11 +52,11 @@ const CUSTOM_CHANNELS_KEY = "alltvlive-custom-channels";
 
 function loadSettings(): UserSettings {
   if (typeof window === "undefined") {
-    return { autoplay: true, viewMode: "grid", hideBrokenChannels: true, kidsMode: false, kidsPin: null };
+    return { ...DEFAULT_SETTINGS };
   }
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return { autoplay: true, viewMode: "grid", hideBrokenChannels: true, kidsMode: false, kidsPin: null };
+    if (!raw) return { ...DEFAULT_SETTINGS };
     const parsed = JSON.parse(raw);
     return {
       autoplay: parsed?.autoplay ?? true,
@@ -44,9 +64,13 @@ function loadSettings(): UserSettings {
       hideBrokenChannels: parsed?.hideBrokenChannels ?? true,
       kidsMode: parsed?.kidsMode ?? false,
       kidsPin: typeof parsed?.kidsPin === "string" ? parsed.kidsPin : null,
+      lockedCategories: Array.isArray(parsed?.lockedCategories)
+        ? parsed.lockedCategories.filter((c: unknown) => typeof c === "string")
+        : [],
+      parentalPin: typeof parsed?.parentalPin === "string" ? parsed.parentalPin : null,
     };
   } catch {
-    return { autoplay: true, viewMode: "grid", hideBrokenChannels: true, kidsMode: false, kidsPin: null };
+    return { ...DEFAULT_SETTINGS };
   }
 }
 
@@ -86,6 +110,11 @@ interface AppState {
   playerOpen: boolean;
   setCurrentChannel: (channel: ChannelWithMeta | null) => void;
   openPlayer: (channel: ChannelWithMeta) => void;
+  /** Channel waiting for the parental PIN */
+  pinGateChannel: ChannelWithMeta | null;
+  parentalUnlocked: boolean;
+  unlockParental: (pin: string) => boolean;
+  cancelPinGate: () => void;
   closePlayer: () => void;
 
   // Favorites
@@ -204,11 +233,25 @@ export const useAppStore = create<AppState>((set, get) => ({
   playerOpen: false,
   setCurrentChannel: (channel) => set({ currentChannel: channel }),
   openPlayer: (channel) => {
+    if (!get().parentalUnlocked && isChannelLocked(channel, get().settings)) {
+      set({ pinGateChannel: channel });
+      return;
+    }
     set({ currentChannel: channel, playerOpen: true });
     // record in history
     get().logWatch(channel.id);
   },
   closePlayer: () => set({ playerOpen: false }),
+  pinGateChannel: null,
+  parentalUnlocked: false,
+  unlockParental: (pin) => {
+    if (pin !== get().settings.parentalPin) return false;
+    const ch = get().pinGateChannel;
+    set({ parentalUnlocked: true, pinGateChannel: null });
+    if (ch) get().openPlayer(ch);
+    return true;
+  },
+  cancelPinGate: () => set({ pinGateChannel: null }),
 
   // Favorites (start empty, hydrate on client)
   favorites: [],
@@ -310,7 +353,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   // Settings
-  settings: { autoplay: true, viewMode: "grid", hideBrokenChannels: true, kidsMode: false, kidsPin: null },
+  settings: { ...DEFAULT_SETTINGS },
   settingsHydrated: false,
   hydrateSettings: () => {
     if (get().settingsHydrated) return;
