@@ -23,6 +23,10 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],
   },
+  async rewrites() {
+    // The sitemap is split into /sitemap/0.xml…; /sitemap.xml stays valid as the index.
+    return [{ source: "/sitemap.xml", destination: "/sitemap-index.xml" }];
+  },
   async headers() {
     return [
       {

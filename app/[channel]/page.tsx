@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { WatchApp } from "@/components/WatchApp";
 import { isBlocked } from "@/lib/blocklist";
+import { getHiddenSet } from "@/lib/server/hiddenChannels";
 import { getCatalog, SITE_URL, type CatalogChannel } from "@/lib/server/catalog";
 
 interface Props {
@@ -40,7 +41,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     meta.categories.join(", ") || "TV"
   } from ${meta.country || "worldwide"}. No signup required.`;
   const url = `${SITE_URL}/${encodeURIComponent(meta.id)}`;
+  // Dead channels (hidden by the daily health check) stay reachable but are not indexed.
+  const dead = (await getHiddenSet()).has(meta.id);
   return {
+    ...(dead ? { robots: { index: false, follow: true } } : {}),
     title,
     description,
     alternates: { canonical: url },
