@@ -242,7 +242,7 @@ function TVMockup() {
               </div>
 
               <div className="text-center drop-shadow-lg">
-                <motion.h3
+                <motion.p
                   key={`title-${index}`}
                   initial={{ y: 12, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -250,7 +250,7 @@ function TVMockup() {
                   className="text-2xl sm:text-4xl font-black tracking-tighter"
                 >
                   {current.name}
-                </motion.h3>
+                </motion.p>
                 <motion.p
                   key={`tag-${index}`}
                   initial={{ y: 8, opacity: 0 }}
@@ -295,11 +295,12 @@ function TVMockup() {
           <button
             key={i}
             onClick={() => setIndex(i)}
-            className={`h-1.5 rounded-full transition-all ${
-              i === index ? "w-6 bg-neon" : "w-1.5 bg-white/20"
-            }`}
+            className="h-[28px] min-w-[28px] flex items-center justify-center"
             aria-label={`Show channel ${i + 1}`}
-          />
+            aria-current={i === index}
+          >
+            <span className={`block h-1.5 rounded-full transition-all ${i === index ? "w-6 bg-neon" : "w-1.5 bg-white/20"}`} />
+          </button>
         ))}
       </div>
     </div>
@@ -492,7 +493,7 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.25 }}
               className="mt-8 flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
             >
-              <Link href="/watch" aria-label="Start watching">
+              <Link href="/watch" className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon">
                 <div className="relative group">
                   {mounted && !reduce && (
                     <>
@@ -500,7 +501,7 @@ export default function LandingPage() {
                       <span className="absolute inset-0 rounded-full border-2 border-neon atl-ring" style={{ animationDelay: "0.7s" }} />
                     </>
                   )}
-                  <motion.button
+                  <motion.span
                     whileHover={reduce ? undefined : { scale: 1.05 }}
                     whileTap={reduce ? undefined : { scale: 0.95 }}
                     className="relative inline-flex items-center gap-3 pl-5 pr-7 py-4 rounded-full bg-gradient-to-r from-neon to-emerald-400 text-black font-bold shadow-[0_0_40px_rgba(0,255,157,0.35)] hover:shadow-[0_0_60px_rgba(0,255,157,0.5)] transition-shadow"
@@ -509,7 +510,7 @@ export default function LandingPage() {
                       <Play className="h-5 w-5 fill-black ml-0.5" strokeWidth={0} />
                     </span>
                     Start Watching Free
-                  </motion.button>
+                  </motion.span>
                 </div>
               </Link>
 

@@ -213,6 +213,8 @@ const en = {
   "landing.countryTitle": "Live TV channels from {name}",
   "landing.categoryTitle": "{name} live TV channels",
   "landing.intro": "{count} free {name} channels. Tap one to watch live, no signup needed.",
+  "search.placeholderShort": "Search",
+  "search.label": "Search channels",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -420,6 +422,8 @@ const bn: Record<MessageKey, string> = {
   "landing.countryTitle": "{name}-এর লাইভ টিভি চ্যানেল",
   "landing.categoryTitle": "{name} লাইভ টিভি চ্যানেল",
   "landing.intro": "{name}-এর {count}টি ফ্রি চ্যানেল। লাইভ দেখতে যেকোনোটিতে চাপ দিন, সাইন আপ লাগবে না।",
+  "search.placeholderShort": "খুঁজুন",
+  "search.label": "চ্যানেল খুঁজুন",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };

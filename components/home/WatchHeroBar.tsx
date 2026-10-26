@@ -126,7 +126,7 @@ export function WatchHeroBar({
         </div>
 
         {/* Center: stats */}
-        <div className="flex items-center gap-2 flex-1 overflow-x-auto scrollbar-hidden sm:justify-center">
+        <div className="flex flex-wrap items-center gap-2 flex-1 sm:justify-center">
           <StatPill
             icon={<Tv2 className="h-3 w-3 text-neon" />}
             value={totalChannels.toLocaleString()}

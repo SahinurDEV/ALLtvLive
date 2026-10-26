@@ -11,7 +11,7 @@ test("hidden channels stay out of results until shown again", async ({ page, req
     }
   }, target.id);
   await page.goto("/watch");
-  const box = page.getByPlaceholder(/search channels/i).first();
+  const box = page.getByLabel(/search channels/i).first();
   await expect(box).toBeVisible({ timeout: 20_000 });
   await box.fill(target.name);
   await expect(page.getByText(/Results for/).first()).toBeVisible();

@@ -923,10 +923,12 @@ export function InlinePlayer() {
                   <span className="text-white font-medium text-[11px] sm:text-xs truncate">
                     {currentChannel.name}
                   </span>
-                  <Badge className="bg-red-600 text-white border-0 text-[8px] sm:text-[9px] px-1 py-0 gap-0.5 shrink-0">
-                    <Radio className="h-1.5 w-1.5 sm:h-2 sm:w-2 animate-pulse" />
-                    LIVE
-                  </Badge>
+                  {phase !== "error" && (
+                    <Badge className="bg-red-600 text-white border-0 text-[8px] sm:text-[9px] px-1 py-0 gap-0.5 shrink-0" data-testid="live-badge">
+                      <Radio className="h-1.5 w-1.5 sm:h-2 sm:w-2 animate-pulse" />
+                      LIVE
+                    </Badge>
+                  )}
                 </div>
               </div>
 

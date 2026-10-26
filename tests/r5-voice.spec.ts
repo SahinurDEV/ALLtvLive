@@ -36,6 +36,6 @@ test("voice search is hidden without speech recognition", async ({ page }) => {
     delete (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition;
   });
   await page.goto("/watch");
-  await expect(page.getByPlaceholder(/search channels/i).first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByLabel(/search channels/i).first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByTestId("voice-search")).toHaveCount(0);
 });
