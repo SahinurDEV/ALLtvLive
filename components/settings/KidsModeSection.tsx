@@ -6,70 +6,78 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/lib/store";
+import { useT } from "@/lib/i18n";
+import { hashPin, tryPin, pinCooldownLeft } from "@/lib/pin";
 
 /** Kids mode toggle with an optional 4-digit PIN to turn it off. */
 export function KidsModeSection() {
+  const t = useT();
   const settings = useAppStore((s) => s.settings);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const [pin, setPin] = useState("");
   const [asking, setAsking] = useState(false);
+  // The kids PIN, or the parental PIN when only that one is set.
+  const guardPin = settings.kidsPin || settings.parentalPin;
 
   const clean = (v: string) => v.replace(/\D/g, "").slice(0, 4);
 
   const turnOn = () => {
     if (pin && pin.length !== 4) {
-      toast.error("PIN must be 4 digits, or leave it empty");
+      toast.error(t("kids.pinLength"));
       return;
     }
-    updateSettings({ kidsMode: true, kidsPin: pin || null });
+    updateSettings({ kidsMode: true, kidsPin: pin ? hashPin(pin) : settings.kidsPin });
     setPin("");
-    toast.success(pin ? "Kids mode on, locked with your PIN" : "Kids mode on");
+    toast.success(pin ? t("kids.onLocked") : t("kids.on"));
   };
 
   const turnOff = () => {
-    if (settings.kidsPin && pin !== settings.kidsPin) {
-      toast.error("Wrong PIN");
-      return;
+    if (guardPin) {
+      const r = tryPin(guardPin, pin);
+      if (r === "cooldown") {
+        toast.error(t("pin.cooldown", { s: Math.ceil(pinCooldownLeft() / 1000) }));
+        return;
+      }
+      if (r === "wrong") {
+        toast.error(t("pin.wrong"));
+        return;
+      }
     }
-    updateSettings({ kidsMode: false, kidsPin: null });
+    updateSettings({ kidsMode: false });
     setPin("");
     setAsking(false);
-    toast.success("Kids mode off");
+    toast.success(t("kids.off"));
   };
 
   return (
     <section>
       <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
         <Baby className="h-4 w-4 text-neon" />
-        Kids mode
+        {t("kids.title")}
       </h3>
       <div className="px-3 py-2.5 rounded-lg border border-border/50 space-y-2">
-        <p className="text-xs text-muted-foreground">
-          Shows only Kids, Animation, Family and Education channels and hides your
-          custom channels. The PIN is stored only on this device, so it is a simple
-          lock, not a security control.
-        </p>
+        <p className="text-xs text-muted-foreground">{t("kids.hint")}</p>
         {!settings.kidsMode ? (
           <div className="flex flex-wrap gap-2">
             <Input
               value={pin}
               onChange={(e) => setPin(clean(e.target.value))}
               inputMode="numeric"
-              placeholder="Optional 4-digit PIN"
+              placeholder={t("kids.optionalPin")}
               className="flex-1 min-w-0 basis-36"
-              aria-label="Kids mode PIN"
+              aria-label={t("kids.pinLabel")}
             />
             <Button type="button" variant="neon" onClick={turnOn}>
-              Turn on
+              {t("kids.turnOn")}
             </Button>
           </div>
-        ) : settings.kidsPin && !asking ? (
-          <Button type="button" variant="outline" className="w-full" onClick={() => setAsking(true)}>
-            Kids mode is on: enter PIN to turn off
+        ) : guardPin && !asking ? (
+          <Button type="button" variant="outline" className="w-full h-auto min-h-10 whitespace-normal" onClick={() => setAsking(true)}>
+            {t("kids.askOff")}
           </Button>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {settings.kidsPin && (
+            {guardPin && (
               <Input
                 value={pin}
                 onChange={(e) => setPin(clean(e.target.value))}
@@ -77,11 +85,11 @@ export function KidsModeSection() {
                 type="password"
                 placeholder="PIN"
                 className="flex-1 min-w-0 basis-28"
-                aria-label="Enter PIN"
+                aria-label={t("pin.enter")}
               />
             )}
             <Button type="button" variant="outline" onClick={turnOff}>
-              Turn off kids mode
+              {t("kids.turnOff")}
             </Button>
           </div>
         )}

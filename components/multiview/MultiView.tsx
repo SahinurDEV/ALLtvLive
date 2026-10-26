@@ -6,6 +6,7 @@ import Hls from "hls.js";
 import Fuse from "fuse.js";
 import { Plus, Tv, Volume2, VolumeX, X, Loader2, AlertTriangle } from "lucide-react";
 import { useChannels } from "@/hooks/useChannels";
+import { useAppStore, isChannelLocked } from "@/lib/store";
 import { buildSourceList } from "@/lib/player/detectStreamType";
 import type { ChannelWithMeta } from "@/lib/types";
 import { useT } from "@/lib/i18n";
@@ -122,7 +123,17 @@ function Tile({
 
 export function MultiView() {
   const t = useT();
-  const { allChannels, isLoading } = useChannels();
+  const { allChannels: everyChannel, isLoading } = useChannels();
+  const settings = useAppStore((s) => s.settings);
+  const parentalUnlocked = useAppStore((s) => s.parentalUnlocked);
+  const hydrateSettings = useAppStore((s) => s.hydrateSettings);
+  // /multiview is its own page, so load kids mode and the lock here too.
+  useEffect(() => hydrateSettings(), [hydrateSettings]);
+  // Kids mode is applied by useChannels; PIN-locked categories are left out here.
+  const allChannels = useMemo(
+    () => (parentalUnlocked ? everyChannel : everyChannel.filter((c) => !isChannelLocked(c, settings))),
+    [everyChannel, settings, parentalUnlocked]
+  );
   const [ids, setIds] = useState<string[]>([]);
   const [audible, setAudible] = useState(0);
   const [query, setQuery] = useState("");

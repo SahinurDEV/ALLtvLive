@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
+import { hashPin, tryPin, pinCooldownLeft } from "@/lib/pin";
 
 export const LOCKABLE_CATEGORIES = [
   "movies",
@@ -33,8 +34,9 @@ export function ParentalLockSection() {
   const clean = (v: string) => v.replace(/\D/g, "").slice(0, 4);
 
   const unlockEditing = () => {
-    if (pin !== settings.parentalPin) {
-      toast.error(t("lock.wrong"));
+    const r = tryPin(settings.parentalPin, pin);
+    if (r !== "ok") {
+      toast.error(r === "cooldown" ? t("pin.cooldown", { s: Math.ceil(pinCooldownLeft() / 1000) }) : t("lock.wrong"));
       return;
     }
     setEditing(true);
@@ -46,7 +48,7 @@ export function ParentalLockSection() {
       toast.error(t("lock.pinLength"));
       return;
     }
-    updateSettings({ parentalPin: pin });
+    updateSettings({ parentalPin: hashPin(pin) });
     setPin("");
     toast.success(t("lock.pinSaved"));
   };
