@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useT, useFormatNumber } from "@/lib/i18n";
 import { useMemo, useEffect, useRef } from "react";
 import { Sidebar } from "@/components/Sidebar";
@@ -506,21 +507,21 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
                     we do not host, cache, or redistribute any video content.
                   </p>
                   <p className="text-[11px] text-muted-foreground">
-                    <a href="/" className="hover:text-neon transition-colors">
+                    <Link href="/" className="hover:text-neon transition-colors">
                       Home
-                    </a>
+                    </Link>
                     <span className="mx-2">·</span>
-                    <a href="/about" className="hover:text-neon transition-colors">
+                    <Link href="/about" className="hover:text-neon transition-colors">
                       About &amp; Disclaimer
-                    </a>
+                    </Link>
                     <span className="mx-2">·</span>
-                    <a href="/public-api" className="hover:text-neon transition-colors">
+                    <Link href="/public-api" className="hover:text-neon transition-colors">
                       Public API
-                    </a>
+                    </Link>
                     <span className="mx-2">·</span>
-                    <a href="/dmca" className="hover:text-neon transition-colors">
+                    <Link href="/dmca" className="hover:text-neon transition-colors">
                       Copyright &amp; Takedown
-                    </a>
+                    </Link>
                     <span className="mx-2">·</span>
                     <a
                       href="https://github.com/SahinurDEV/ALLtvLive"
