@@ -5,42 +5,14 @@ import { Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n";
-
-// Everything ALLtvLive keeps in this browser. No account needed: move it to
-// another device by exporting here and importing there.
-const KEYS = [
-  "alltvlive-favorites",
-  "alltvlive-fav-groups",
-  "alltvlive-hidden-channels",
-  "alltvlive-watchtime",
-  "alltvlive-history",
-  "alltvlive-custom-channels",
-  "alltvlive-settings",
-  "alltvlive-lang",
-] as const;
-
-interface Backup {
-  app: "alltvlive";
-  version: 1;
-  exportedAt: string;
-  data: Record<string, unknown>;
-}
+import { applyBackup, browserKV, collectBackup } from "@/lib/backup";
 
 export function DataBackup() {
   const t = useT();
 
   const exportData = () => {
-    const data: Record<string, unknown> = {};
-    for (const k of KEYS) {
-      const raw = localStorage.getItem(k);
-      if (raw == null) continue;
-      try {
-        data[k] = JSON.parse(raw);
-      } catch {
-        data[k] = raw;
-      }
-    }
-    const backup: Backup = { app: "alltvlive", version: 1, exportedAt: new Date().toISOString(), data };
+    // Every profile, the profile list and the shared lock.
+    const backup = collectBackup(browserKV());
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -54,20 +26,7 @@ export function DataBackup() {
     e.target.value = "";
     if (!file) return;
     try {
-      const parsed = JSON.parse(await file.text()) as Partial<Backup>;
-      if (parsed.app !== "alltvlive" || !parsed.data || typeof parsed.data !== "object") {
-        throw new Error("not a backup");
-      }
-      // Never let a backup switch off a PIN-locked kids mode on this device.
-      const current = JSON.parse(localStorage.getItem("alltvlive-settings") || "{}");
-      for (const k of KEYS) {
-        if (!(k in parsed.data)) continue;
-        let value = parsed.data[k];
-        if (k === "alltvlive-settings" && current?.kidsMode && value && typeof value === "object") {
-          value = { ...(value as object), kidsMode: true, kidsPin: current.kidsPin ?? null };
-        }
-        localStorage.setItem(k, typeof value === "string" ? value : JSON.stringify(value));
-      }
+      applyBackup(browserKV(), JSON.parse(await file.text()));
       toast.success(t("backup.imported"));
       setTimeout(() => window.location.reload(), 600);
     } catch {

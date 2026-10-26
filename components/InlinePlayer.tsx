@@ -1,5 +1,6 @@
 "use client";
 
+import { profileKey } from "@/lib/profiles";
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import type { ChannelWithMeta } from "@/lib/types";
 import { NowNext } from "@/components/player/NowNext";
@@ -409,12 +410,12 @@ export function InlinePlayer() {
 
   // Remember the auto-skip choice between visits.
   useEffect(() => {
-    setAutoNext(localStorage.getItem("alltvlive-autoskip") === "1");
+    setAutoNext(localStorage.getItem(profileKey("alltvlive-autoskip")) === "1");
   }, []);
   const toggleAutoNext = useCallback(() => {
     setAutoNext((v) => {
       try {
-        localStorage.setItem("alltvlive-autoskip", v ? "0" : "1");
+        localStorage.setItem(profileKey("alltvlive-autoskip"), v ? "0" : "1");
       } catch {
         // ignore
       }
@@ -481,8 +482,8 @@ export function InlinePlayer() {
   // Audio-only ("radio") mode and keep playing in the background
   useEffect(() => {
     try {
-      setAudioOnly(localStorage.getItem("alltvlive-audio-only") === "1");
-      setBgPlay(localStorage.getItem("alltvlive-bg-play") === "1");
+      setAudioOnly(localStorage.getItem(profileKey("alltvlive-audio-only")) === "1");
+      setBgPlay(localStorage.getItem(profileKey("alltvlive-bg-play")) === "1");
     } catch {
       // ignore
     }
@@ -490,7 +491,7 @@ export function InlinePlayer() {
   const toggleAudioOnly = useCallback(() => {
     setAudioOnly((v) => {
       try {
-        localStorage.setItem("alltvlive-audio-only", v ? "0" : "1");
+        localStorage.setItem(profileKey("alltvlive-audio-only"), v ? "0" : "1");
       } catch {
         // ignore
       }
@@ -500,7 +501,7 @@ export function InlinePlayer() {
   const toggleBgPlay = useCallback(() => {
     setBgPlay((v) => {
       try {
-        localStorage.setItem("alltvlive-bg-play", v ? "0" : "1");
+        localStorage.setItem(profileKey("alltvlive-bg-play"), v ? "0" : "1");
       } catch {
         // ignore
       }
