@@ -133,3 +133,24 @@
   font-size: 0.8125rem;
   line-height: 1.15rem;
 }
+
+/* Landing-page loops: CSS (compositor-only transform/opacity) instead of JS
+   animation, so they cost no main-thread time on phones. */
+@keyframes atl-marquee { to { transform: translateX(-50%); } }
+@keyframes atl-float { 50% { transform: translate(30px, -40px); } }
+@keyframes atl-twinkle { 0%, 100% { opacity: 0.15; transform: scale(1); } 50% { opacity: 0.9; transform: scale(1.6); } }
+@keyframes atl-blink { 50% { opacity: 0; } }
+@keyframes atl-ring { from { transform: scale(1); opacity: 0.6; } to { transform: scale(1.6); opacity: 0; } }
+@keyframes atl-bob { 50% { transform: translateY(8px); } }
+.atl-marquee { animation: atl-marquee 40s linear infinite; will-change: transform; }
+.atl-float { animation: atl-float 14s ease-in-out infinite; }
+.atl-twinkle { animation: atl-twinkle 3s ease-in-out infinite; }
+.atl-blink { animation: atl-blink 2s ease-in-out infinite; opacity: 0.6; }
+.atl-ring { animation: atl-ring 2s ease-out infinite; }
+.atl-bob { animation: atl-bob 1.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .atl-marquee, .atl-float, .atl-twinkle, .atl-blink, .atl-ring, .atl-bob { animation: none; }
+}
+@keyframes atl-card-in { from { opacity: 0; transform: translateY(20px); } }
+.atl-card-in { animation: atl-card-in 0.3s ease-out backwards; }
+@media (prefers-reduced-motion: reduce) { .atl-card-in { animation: none; } }
