@@ -83,6 +83,12 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
     [allChannels, primaryId]
   );
 
+  // /watch?q=news opens with that search (used by the site search box in Google).
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) useAppStore.getState().setSearch(q.slice(0, 100));
+  }, []);
+
   useEffect(() => {
     hydrateFavorites();
     hydrateHistory();

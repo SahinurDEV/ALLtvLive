@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "sonner";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { SITE_URL, websiteJsonLd } from "@/lib/site";
 import "./globals.css";
 
 const ADSENSE_CLIENT_ID = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
@@ -11,7 +12,7 @@ const ADSENSE_CLIENT_ID = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://alltvlive.vercel.app"),
+  metadataBase: new URL(SITE_URL),
   title: "ALLtvLive - Free Live TV Channels",
   description:
     "Watch thousands of free live TV channels from around the world.",
@@ -64,6 +65,10 @@ export default function RootLayout({
         {ADSENSE_CLIENT_ID && (
           <meta name="google-adsense-account" content={ADSENSE_CLIENT_ID} />
         )}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd()).replace(/</g, "\\u003c") }}
+        />
       </head>
       <body className={inter.className}>
         <ThemeProvider
