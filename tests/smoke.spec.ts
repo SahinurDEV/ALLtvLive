@@ -31,7 +31,7 @@ test("static pages render without sideways scroll", async ({ page }) => {
 
 test("watch page loads the channel catalog", async ({ page }) => {
   await page.goto("/watch");
-  await expect(page.getByPlaceholder(/search channels/i).first()).toBeVisible();
+  await expect(page.getByLabel(/search channels/i).first()).toBeVisible();
   await expect(page.getByText("watching")).toHaveCount(0);
   await noSideScroll(page);
 });
@@ -148,7 +148,7 @@ test("typing a channel number shows the number overlay", async ({ page }) => {
 
 test("search understands Bangla words and typos", async ({ page }) => {
   await page.goto("/watch");
-  const box = page.getByPlaceholder(/search channels/i).first();
+  const box = page.getByLabel(/search channels/i).first();
   await expect(box).toBeVisible({ timeout: 20_000 });
   for (const q of ["খবর", "aljazera"]) {
     await box.fill(q);

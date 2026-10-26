@@ -18,5 +18,5 @@ test("every page has WebSite structured data", async ({ page }) => {
 
 test("/watch?q= opens with that search", async ({ page }) => {
   await page.goto("/watch?q=news");
-  await expect(page.getByPlaceholder(/search/i).first()).toHaveValue("news", { timeout: 20_000 });
+  await expect(page.getByLabel(/search channels/i).first()).toHaveValue("news", { timeout: 20_000 });
 });

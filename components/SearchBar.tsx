@@ -39,6 +39,15 @@ export function SearchBar() {
   const [localValue, setLocalValue] = useState(searchValue);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(0);
+  // Phones get a short placeholder so it is not cut off at 375px.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
   // Follow searches set from outside the box (e.g. /watch?q=, voice search).
   useEffect(() => {
     setLocalValue((v) => (v.trim() === searchValue.trim() ? v : searchValue));
@@ -179,13 +188,13 @@ export function SearchBar() {
       <Input
         ref={inputRef}
         type="text"
-        placeholder={t("search.placeholder")}
+        placeholder={narrow ? t("search.placeholderShort") : t("search.placeholder")}
         value={localValue}
         onChange={(e) => handleChange(e.target.value)}
         onFocus={() => setDropdownOpen(true)}
         onKeyDown={handleKeyDown}
         className="pl-9 pr-16 bg-secondary/50 border-border/50 focus:border-neon/50 focus:ring-neon/20"
-        aria-label="Search channels"
+        aria-label={t("search.label")}
         aria-expanded={showDropdown}
         aria-autocomplete="list"
         role="combobox"
