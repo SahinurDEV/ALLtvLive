@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { profileKey } from "./profiles";
+import { tryPin } from "./pin";
 import { loadGroups, saveGroups, type FavoriteGroup } from "./favoriteGroups";
 import type { ChannelWithMeta, CustomChannel, FilterState } from "./types";
 import {
@@ -57,9 +58,48 @@ export function isChannelLocked(channel: { categories?: string[] }, settings: Us
 }
 
 const SETTINGS_KEY = "alltvlive-settings";
+/** PINs and locked categories are shared by every profile on this device. */
+export const PARENTAL_KEY = "alltvlive-parental";
+
+interface ParentalState { parentalPin: string | null; kidsPin: string | null; lockedCategories: string[] }
+
+function readParental(): ParentalState | null {
+  try {
+    const raw = localStorage.getItem(PARENTAL_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    return {
+      parentalPin: typeof p?.parentalPin === "string" ? p.parentalPin : null,
+      kidsPin: typeof p?.kidsPin === "string" ? p.kidsPin : null,
+      lockedCategories: Array.isArray(p?.lockedCategories) ? p.lockedCategories.filter((c: unknown) => typeof c === "string") : [],
+    };
+  } catch {
+    return null;
+  }
+}
 const CUSTOM_CHANNELS_KEY = "alltvlive-custom-channels";
 
 function loadSettings(): UserSettings {
+  const s = loadProfileSettings();
+  if (typeof window === "undefined") return s;
+  const g = readParental();
+  if (!g) {
+    // First run after the update: promote this profile's PINs to the shared lock.
+    if (s.parentalPin || s.kidsPin || s.lockedCategories.length) writeParental(s);
+    return s;
+  }
+  return { ...s, ...g };
+}
+
+function writeParental(s: UserSettings) {
+  try {
+    localStorage.setItem(PARENTAL_KEY, JSON.stringify({ parentalPin: s.parentalPin, kidsPin: s.kidsPin, lockedCategories: s.lockedCategories }));
+  } catch {
+    // ignore
+  }
+}
+
+function loadProfileSettings(): UserSettings {
   if (typeof window === "undefined") {
     return { ...DEFAULT_SETTINGS };
   }
@@ -96,7 +136,10 @@ function loadSettings(): UserSettings {
 function saveSettings(settings: UserSettings) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(profileKey(SETTINGS_KEY), JSON.stringify(settings));
+    const { parentalPin: _p, kidsPin: _k, lockedCategories: _l, ...rest } = settings;
+    void _p; void _k; void _l;
+    localStorage.setItem(profileKey(SETTINGS_KEY), JSON.stringify(rest));
+    writeParental(settings);
   } catch {
     // ignore
   }
@@ -290,7 +333,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   pinGateChannel: null,
   parentalUnlocked: false,
   unlockParental: (pin) => {
-    if (pin !== get().settings.parentalPin) return false;
+    if (tryPin(get().settings.parentalPin, pin) !== "ok") return false;
     const ch = get().pinGateChannel;
     set({ parentalUnlocked: true, pinGateChannel: null });
     if (ch) get().openPlayer(ch);

@@ -5,6 +5,9 @@ import { Users, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useT } from "@/lib/i18n";
+import { useAppStore } from "@/lib/store";
+import { tryPin, pinCooldownLeft } from "@/lib/pin";
+import { toast } from "sonner";
 import {
   createProfile,
   deleteProfile,
@@ -21,6 +24,19 @@ export function ProfilesSection() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [active, setActive] = useState(DEFAULT_PROFILE_ID);
   const [name, setName] = useState("");
+  const settings = useAppStore((s) => s.settings);
+  const guardPin = settings.kidsMode ? settings.kidsPin || settings.parentalPin : null;
+  const [unlocked, setUnlocked] = useState(false);
+  const [pin, setPin] = useState("");
+  // In kids mode with a PIN, leaving or changing profiles needs the PIN first.
+  const locked = !!guardPin && !unlocked;
+
+  const unlock = () => {
+    const r = tryPin(guardPin, pin);
+    setPin("");
+    if (r === "ok") setUnlocked(true);
+    else toast.error(r === "cooldown" ? t("pin.cooldown", { s: Math.ceil(pinCooldownLeft() / 1000) }) : t("pin.wrong"));
+  };
 
   useEffect(() => {
     setProfiles(loadProfiles());
@@ -42,12 +58,30 @@ export function ProfilesSection() {
       </h3>
       <div className="px-3 py-2.5 rounded-lg border border-border/50 space-y-2">
         <p className="text-xs text-muted-foreground">{t("profiles.hint")}</p>
+        {locked && (
+          <div className="flex flex-wrap gap-2 items-center" data-testid="profiles-pin">
+            <p className="text-xs w-full">{t("profiles.pinNeeded")}</p>
+            <Input
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              inputMode="numeric"
+              type="password"
+              placeholder="PIN"
+              aria-label={t("pin.enter")}
+              className="flex-1 min-w-0 basis-28"
+            />
+            <Button type="button" variant="neon" onClick={unlock}>
+              {t("profiles.unlock")}
+            </Button>
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
           {profiles.map((p) => (
             <div key={p.id} className="flex items-center">
               <button
                 type="button"
-                onClick={() => p.id !== active && switchProfile(p.id)}
+                onClick={() => !locked && p.id !== active && switchProfile(p.id)}
+                disabled={locked && p.id !== active}
                 aria-pressed={p.id === active}
                 className={`h-9 px-3 rounded-full border text-sm flex items-center gap-1.5 ${
                   p.id === active ? "bg-neon text-black border-neon font-semibold" : "border-border/50 hover:border-neon/50"
@@ -56,7 +90,7 @@ export function ProfilesSection() {
                 <span aria-hidden>{p.emoji}</span>
                 {p.id === DEFAULT_PROFILE_ID && p.name === "Me" ? t("profiles.me") : p.name}
               </button>
-              {p.id !== DEFAULT_PROFILE_ID && p.id !== active && (
+              {!locked && p.id !== DEFAULT_PROFILE_ID && p.id !== active && (
                 <Button
                   type="button"
                   variant="ghost"
@@ -74,7 +108,7 @@ export function ProfilesSection() {
             </div>
           ))}
         </div>
-        <div className="flex flex-wrap gap-2">
+        {!locked && <div className="flex flex-wrap gap-2">
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -89,7 +123,7 @@ export function ProfilesSection() {
           <Button type="button" variant="neon" onClick={() => add(true)} data-testid="add-kids-profile">
             🧸 {t("profiles.addKids")}
           </Button>
-        </div>
+        </div>}
       </div>
     </section>
   );
