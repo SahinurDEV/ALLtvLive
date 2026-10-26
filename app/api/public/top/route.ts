@@ -1,3 +1,4 @@
+import { publicRateLimit } from "@/lib/server/publicRateLimit";
 import { NextResponse } from "next/server";
 import { getDb, HISTORY_COLLECTION } from "@/lib/db/mongo";
 import { isBlocked } from "@/lib/blocklist";
@@ -9,6 +10,8 @@ const DEFAULT_RANGE_MS = 24 * 60 * 60 * 1000;
 const MAX_LIMIT = 100;
 
 export async function GET(req: Request) {
+  const limited = publicRateLimit(req, "top");
+  if (limited) return limited;
   const url = new URL(req.url);
   const rangeRaw = url.searchParams.get("rangeMs");
   const limitRaw = url.searchParams.get("limit");

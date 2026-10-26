@@ -1,3 +1,4 @@
+import { publicRateLimit } from "@/lib/server/publicRateLimit";
 import { NextResponse } from "next/server";
 import { getSlimCatalog } from "@/lib/server/catalog";
 import { EPG_COUNTRIES, sportsToday } from "@/lib/server/epg";
@@ -10,6 +11,8 @@ const DEFAULTS = ["GB", "US", "IN"];
 
 /** GET /api/sports?country=BD -> today's sports listings from the free guide. */
 export async function GET(req: Request) {
+  const limited = publicRateLimit(req, "sports");
+  if (limited) return limited;
   const want = (new URL(req.url).searchParams.get("country") || "").slice(0, 2).toUpperCase();
   const countries = Array.from(new Set([...(EPG_COUNTRIES.has(want) ? [want] : []), ...DEFAULTS])).slice(0, 3);
   try {

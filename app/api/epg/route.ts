@@ -1,3 +1,4 @@
+import { publicRateLimit } from "@/lib/server/publicRateLimit";
 import { NextResponse } from "next/server";
 import { lookupGuide } from "@/lib/server/epg";
 
@@ -9,6 +10,8 @@ const CACHE = { "vercel-cdn-cache-control": "max-age=900, stale-while-revalidate
 
 /** GET /api/epg?country=GB&name=BBC%20News[&name=alt] -> { programmes } */
 export async function GET(req: Request) {
+  const limited = publicRateLimit(req, "epg");
+  if (limited) return limited;
   const url = new URL(req.url);
   const country = (url.searchParams.get("country") || "").slice(0, 2);
   const names = url.searchParams.getAll("name").map((n) => n.slice(0, 120)).slice(0, 5);
