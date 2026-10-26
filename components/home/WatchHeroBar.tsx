@@ -86,8 +86,8 @@ export function WatchHeroBar({
     <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-neon/25 bg-gradient-to-br from-neon/[0.06] via-background/60 to-fuchsia-500/[0.05] backdrop-blur">
       {/* Animated backdrop */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-neon/10 blur-3xl motion-reduce:hidden animate-pulse" />
-        <div className="absolute -bottom-20 right-1/4 w-72 h-72 rounded-full bg-fuchsia-500/10 blur-3xl motion-reduce:hidden animate-pulse [animation-delay:1.5s]" />
+        <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-neon/10 blur-3xl motion-reduce:hidden" />
+        <div className="absolute -bottom-20 right-1/4 w-72 h-72 rounded-full bg-fuchsia-500/10 blur-3xl motion-reduce:hidden [animation-delay:1.5s]" />
       </div>
 
       <div className="relative flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3">

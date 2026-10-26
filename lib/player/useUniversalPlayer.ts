@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import Hls from "hls.js";
+import type Hls from "hls.js";
+
+// hls.js is ~160 KB gzipped, so it is loaded on demand the first time a
+// player mounts instead of being part of every page's bundle.
+let HlsCtor: typeof Hls | null = null;
+let hlsPromise: Promise<typeof Hls> | null = null;
+function loadHls(): Promise<typeof Hls> {
+  if (!hlsPromise) hlsPromise = import("hls.js").then((m) => (HlsCtor = m.default));
+  return hlsPromise;
+}
 import type { ChannelWithMeta } from "@/lib/types";
 import { buildSourceList, type ResolvedSource } from "./detectStreamType";
 import { reportPlaybackResult } from "./streamHealthCheck";
@@ -72,6 +81,18 @@ export function useUniversalPlayer({
 }: UseUniversalPlayerOptions): UseUniversalPlayerResult {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const [hlsReady, setHlsReady] = useState(() => HlsCtor !== null);
+  useEffect(() => {
+    if (HlsCtor) return;
+    let alive = true;
+    loadHls()
+      .then(() => alive && setHlsReady(true))
+      .catch(() => alive && setHlsReady(true)); // falls back to native playback
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attemptsRef = useRef(0);
@@ -141,6 +162,8 @@ export function useUniversalPlayer({
   }, [clearGestureListener]);
 
   const activeSource = sources[sourceIndex] || null;
+  // Only HLS sources need to re-run the load effect once hls.js arrives.
+  const hlsGate = activeSource?.type === "hls" ? hlsReady : true;
   const isYouTube = activeSource?.type === "youtube";
   const youtubeEmbedUrl = useMemo(() => {
     if (!activeSource || activeSource.type !== "youtube" || !activeSource.youtubeId) return null;
@@ -270,6 +293,9 @@ export function useUniversalPlayer({
 
     const url = activeSource.url;
     const type = activeSource.type;
+    // Wait for hls.js; this effect runs again once it has loaded.
+    if (type === "hls" && !HlsCtor) return;
+    const H = HlsCtor as typeof Hls;
 
     const bumpToPlaying = () => {
       clearTimers();
@@ -299,11 +325,11 @@ export function useUniversalPlayer({
 
     const useNativeHls =
       type === "hls" &&
-      !Hls.isSupported() &&
+      !H.isSupported() &&
       video.canPlayType("application/vnd.apple.mpegurl");
 
-    if (type === "hls" && Hls.isSupported()) {
-      const hls = new Hls({
+    if (type === "hls" && H.isSupported()) {
+      const hls = new H({
         enableWorker: true,
         lowLatencyMode: true,
         maxBufferLength: 30,
@@ -314,7 +340,7 @@ export function useUniversalPlayer({
         hls.loadSource(url);
         hls.attachMedia(video);
 
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        hls.on(H.Events.MANIFEST_PARSED, () => {
           const lv = hls.levels
             .map((l, i) => ({ index: i, height: l.height || 0, bitrate: l.bitrate || 0 }))
             .filter((l) => l.height > 0)
@@ -327,11 +353,11 @@ export function useUniversalPlayer({
           }
         });
 
-        hls.on(Hls.Events.FRAG_LOADED, (_e, data) => {
+        hls.on(H.Events.FRAG_LOADED, (_e, data) => {
           bytesRef.current += data.frag.stats?.loaded || 0;
         });
 
-        hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
+        hls.on(H.Events.AUDIO_TRACKS_UPDATED, () => {
           const tracks = hls.audioTracks.map((t, i) => ({
             id: i,
             name: t.name || t.lang || `Track ${i + 1}`,
@@ -341,7 +367,7 @@ export function useUniversalPlayer({
           setAudioTrackState(hls.audioTrack);
         });
 
-        hls.on(Hls.Events.ERROR, (_event, data) => {
+        hls.on(H.Events.ERROR, (_event, data) => {
           const code = (data as { response?: { code?: number } }).response?.code;
           if (typeof code === "number" && code >= 400) lastStatusRef.current = code;
           if (data.fatal) {
@@ -385,7 +411,7 @@ export function useUniversalPlayer({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [channel?.id, activeSource?.url, activeSource?.type, reloadNonce]);
+  }, [channel?.id, activeSource?.url, activeSource?.type, reloadNonce, hlsGate]);
 
   // Clean up on unmount
   useEffect(() => {

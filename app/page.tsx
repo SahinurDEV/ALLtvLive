@@ -313,21 +313,13 @@ function FlagsMarquee() {
     <div className="relative w-full overflow-hidden py-4 border-y border-border/40 bg-card/30 backdrop-blur">
       <div className="absolute inset-y-0 left-0 w-16 z-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
       <div className="absolute inset-y-0 right-0 w-16 z-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
-      <motion.div
-        className="flex gap-6 text-3xl whitespace-nowrap"
-        animate={reduce ? undefined : { x: ["0%", "-50%"] }}
-        transition={
-          reduce
-            ? undefined
-            : { duration: 40, repeat: Infinity, ease: "linear" }
-        }
-      >
+      <div className={`flex gap-6 text-3xl whitespace-nowrap w-max ${reduce ? "" : "atl-marquee"}`}>
         {doubled.map((f, i) => (
           <span key={i} className="grayscale hover:grayscale-0 transition-all">
             {f}
           </span>
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -336,11 +328,7 @@ function FloatingOrb({ className, delay = 0 }: { className: string; delay?: numb
   const reduce = useReducedMotion();
   if (reduce) return <div className={className} />;
   return (
-    <motion.div
-      className={className}
-      animate={{ y: [0, -40, 0], x: [0, 30, 0] }}
-      transition={{ duration: 14, repeat: Infinity, delay, ease: "easeInOut" }}
-    />
+    <div className={`${className} atl-float`} style={{ animationDelay: `${delay}s` }} />
   );
 }
 
@@ -355,27 +343,10 @@ function AnimatedChannelDots() {
         const top = (i * 37) % 100;
         const left = (i * 53) % 100;
         return (
-          <motion.div
+          <div
             key={i}
-            className="absolute w-1 h-1 rounded-full bg-neon"
-            style={{ top: `${top}%`, left: `${left}%` }}
-            animate={
-              reduce
-                ? undefined
-                : {
-                    opacity: [0.15, 0.9, 0.15],
-                    scale: [1, 1.6, 1],
-                  }
-            }
-            transition={
-              reduce
-                ? undefined
-                : {
-                    duration: 3 + (i % 5),
-                    repeat: Infinity,
-                    delay: (i % 10) * 0.3,
-                  }
-            }
+            className={`absolute w-1 h-1 rounded-full bg-neon ${reduce ? "opacity-30" : "atl-twinkle"}`}
+            style={{ top: `${top}%`, left: `${left}%`, animationDuration: `${3 + (i % 5)}s`, animationDelay: `${(i % 10) * 0.3}s` }}
           />
         );
       })}
@@ -429,11 +400,7 @@ export default function LandingPage() {
           <div className="relative w-9 h-9 rounded-lg bg-neon/10 flex items-center justify-center border border-neon/30">
             <Radio className="h-5 w-5 text-neon" />
             {mounted && !reduce && (
-              <motion.div
-                className="absolute inset-0 rounded-lg border border-neon"
-                animate={{ opacity: [0.6, 0, 0.6] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
+              <div className="absolute inset-0 rounded-lg border border-neon atl-blink" />
             )}
           </div>
           <span className="font-bold text-lg tracking-tight">
@@ -529,21 +496,8 @@ export default function LandingPage() {
                 <div className="relative group">
                   {mounted && !reduce && (
                     <>
-                      <motion.span
-                        className="absolute inset-0 rounded-full border-2 border-neon"
-                        animate={{ scale: [1, 1.5], opacity: [0.7, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
-                      />
-                      <motion.span
-                        className="absolute inset-0 rounded-full border-2 border-neon"
-                        animate={{ scale: [1, 1.7], opacity: [0.4, 0] }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          delay: 0.7,
-                          ease: "easeOut",
-                        }}
-                      />
+                      <span className="absolute inset-0 rounded-full border-2 border-neon atl-ring" />
+                      <span className="absolute inset-0 rounded-full border-2 border-neon atl-ring" style={{ animationDelay: "0.7s" }} />
                     </>
                   )}
                   <motion.button
@@ -609,12 +563,9 @@ export default function LandingPage() {
         >
           <span className="text-xs uppercase tracking-widest">Explore</span>
           {mounted && !reduce ? (
-            <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            >
+            <div className="atl-bob">
               <ChevronDown className="h-5 w-5" />
-            </motion.div>
+            </div>
           ) : (
             <ChevronDown className="h-5 w-5" />
           )}

@@ -1,7 +1,6 @@
 "use client";
 
 import { memo, useState, useCallback, useEffect } from "react";
-import { motion } from "framer-motion";
 import { Play, Heart, Users, Radio, ShieldCheck, AlertTriangle, ThumbsUp, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useChannelInsights } from "@/hooks/useChannelInsights";
@@ -56,12 +55,7 @@ export const ChannelCard = memo(function ChannelCard({
     !imgError && channel.logo ? channel.logo : getPlaceholderLogo(channel.name);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: Math.min(index * 0.02, 0.3) }}
-      className="group relative"
-    >
+    <div className="group relative atl-card-in" style={{ animationDelay: `${Math.min(index * 0.02, 0.3)}s` }}>
       <div
         onClick={handlePlay}
         className="relative overflow-hidden rounded-xl border border-border/50 bg-card cursor-pointer transition-all duration-300 hover:border-neon/40 hover:shadow-[0_0_30px_rgba(0,255,157,0.1)] hover:scale-[1.02]"
@@ -84,7 +78,7 @@ export const ChannelCard = memo(function ChannelCard({
           {/* Live indicator + health dot */}
           {channel.isLive && (
             <div className="absolute top-2 left-2 flex items-center gap-1 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-              <Radio className="h-3 w-3 animate-pulse" />
+              <Radio className="h-3 w-3" aria-hidden />
               LIVE
             </div>
           )}
@@ -193,6 +187,6 @@ export const ChannelCard = memo(function ChannelCard({
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 });
