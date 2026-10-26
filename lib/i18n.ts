@@ -310,6 +310,11 @@ const en = {
   "lp.f6t": "Private & Free",
   "lp.f6b": "No account, no tracking beyond anonymous analytics. Open-source under MIT.",
   "lp.watch": "Watch",
+  "err.title": "Something went wrong",
+  "err.body": "This part of ALLtvLive hit an error. Your favorites and settings are safe.",
+  "err.retry": "Try again",
+  "err.player": "The player hit an error.",
+  "err.reloadPlayer": "Reload player",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -614,6 +619,11 @@ const bn: Record<MessageKey, string> = {
   "lp.f6t": "প্রাইভেট ও ফ্রি",
   "lp.f6b": "অ্যাকাউন্ট নেই, বেনামি পরিসংখ্যান ছাড়া কোনো ট্র্যাকিং নেই। MIT লাইসেন্সে ওপেন সোর্স।",
   "lp.watch": "দেখুন",
+  "err.title": "কিছু একটা সমস্যা হয়েছে",
+  "err.body": "ALLtvLive-এর এই অংশে একটি সমস্যা হয়েছে। আপনার ফেভারিট আর সেটিংস নিরাপদ আছে।",
+  "err.retry": "আবার চেষ্টা করুন",
+  "err.player": "প্লেয়ারে একটি সমস্যা হয়েছে।",
+  "err.reloadPlayer": "প্লেয়ার আবার চালু করুন",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };

@@ -1,5 +1,6 @@
 "use client";
 
+import { PlayerErrorBoundary } from "@/components/player/PlayerErrorBoundary";
 import Link from "next/link";
 import { useT, useFormatNumber } from "@/lib/i18n";
 import { useMemo, useEffect, useRef } from "react";
@@ -370,7 +371,9 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
                     featuredCount={featuredChannels.length}
                   />
                 )}
-                <InlinePlayer />
+                <PlayerErrorBoundary>
+                  <InlinePlayer />
+                </PlayerErrorBoundary>
                 {theaterMode && (
                   <div className="flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
                     <Sparkles className="h-3 w-3 text-neon" />
