@@ -1,6 +1,7 @@
 "use client";
 
 import { Shuffle, Menu, Tv, Settings, Sparkles } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "./SearchBar";
 import { useAppStore } from "@/lib/store";
@@ -8,6 +9,7 @@ import { useFeatured } from "@/hooks/useFeatured";
 import { useMemo } from "react";
 
 export function Navbar() {
+  const t = useT();
   const setSidebarOpen = useAppStore((s) => s.setSidebarOpen);
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
   const allChannels = useAppStore((s) => s.allChannels);
@@ -63,7 +65,7 @@ export function Navbar() {
             size="icon"
             className="lg:hidden"
             onClick={() => setSidebarOpen(true)}
-            aria-label="Open menu"
+            aria-label={t("nav.openMenu")}
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -89,8 +91,8 @@ export function Navbar() {
                 size="sm"
                 onClick={handleFeaturedChannel}
                 className="gap-1.5 hidden sm:flex border-neon/40 hover:border-neon hover:bg-neon/10 hover:text-neon"
-                aria-label="Play a 24/7 live channel"
-                title="Play a random 24/7 Live channel"
+                aria-label={t("nav.play247")}
+                title={t("nav.play247")}
               >
                 <Sparkles className="h-4 w-4 text-neon" />
                 24/7 Live
@@ -100,7 +102,7 @@ export function Navbar() {
                 size="icon"
                 onClick={handleFeaturedChannel}
                 className="sm:hidden border-neon/40 hover:border-neon hover:bg-neon/10 hover:text-neon"
-                aria-label="Play a 24/7 live channel"
+                aria-label={t("nav.play247")}
               >
                 <Sparkles className="h-4 w-4 text-neon" />
               </Button>
@@ -112,7 +114,7 @@ export function Navbar() {
             size="sm"
             onClick={handleRandomChannel}
             className="gap-1.5 hidden sm:flex"
-            aria-label="Play a random channel"
+            aria-label={t("nav.playRandom")}
           >
             <Shuffle className="h-4 w-4" />
             Surprise Me
@@ -122,7 +124,7 @@ export function Navbar() {
             size="icon"
             onClick={handleRandomChannel}
             className="hidden min-[420px]:inline-flex sm:hidden"
-            aria-label="Play a random channel"
+            aria-label={t("nav.playRandom")}
           >
             <Shuffle className="h-4 w-4" />
           </Button>
@@ -130,7 +132,7 @@ export function Navbar() {
             variant="ghost"
             size="icon"
             onClick={() => setSettingsOpen(true)}
-            aria-label="Open settings"
+            aria-label={t("nav.openSettings")}
           >
             <Settings className="h-5 w-5" />
           </Button>

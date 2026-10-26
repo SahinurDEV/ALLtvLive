@@ -1,22 +1,24 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useT, type MessageKey } from "@/lib/i18n";
 import { X, Send, MessageSquareWarning, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 
-const REASONS = [
-  { id: "broken", label: "Stream won't load / infinite spinner" },
-  { id: "wrong_content", label: "Wrong channel / wrong content" },
-  { id: "inappropriate", label: "Inappropriate content" },
-  { id: "buffering", label: "Buffers or freezes a lot" },
-  { id: "other", label: "Something else" },
+const REASONS: { id: string; label: MessageKey }[] = [
+  { id: "broken", label: "report.r.broken" },
+  { id: "wrong_content", label: "report.r.wrong" },
+  { id: "inappropriate", label: "report.r.inappropriate" },
+  { id: "buffering", label: "report.r.buffering" },
+  { id: "other", label: "report.r.other" },
 ];
 
 const MAX_NOTE_LEN = 500;
 
 export function ReportBrokenStreamDialog() {
+  const t = useT();
   const reportOpen = useAppStore((s) => s.reportOpen);
   const closeReportDialog = useAppStore((s) => s.closeReportDialog);
   const channelId = useAppStore((s) => s.lastErrorChannelId);
@@ -47,19 +49,19 @@ export function ReportBrokenStreamDialog() {
       });
       const data = await res.json().catch(() => null);
       if (res.status === 429) {
-        toast.error("You've reported a lot recently. Try again in a minute.");
+        toast.error(t("report.tooMany"));
         return;
       }
       if (!res.ok || !data?.ok) {
-        toast.error("Couldn't send report. Please try again.");
+        toast.error(t("report.failed"));
         return;
       }
-      toast.success("Report sent — thanks for flagging this.");
+      toast.success(t("report.sent"));
       setNote("");
       setReason(REASONS[0].id);
       closeReportDialog();
     } catch {
-      toast.error("Network error while sending report.");
+      toast.error(t("report.network"));
     } finally {
       setSubmitting(false);
     }
@@ -83,7 +85,7 @@ export function ReportBrokenStreamDialog() {
               <MessageSquareWarning className="h-5 w-5 text-yellow-500" />
             </div>
             <div>
-              <h2 id="report-title" className="text-base font-bold">Report broken stream</h2>
+              <h2 id="report-title" className="text-base font-bold">{t("report.title")}</h2>
               <p className="text-xs text-muted-foreground mt-0.5 truncate">{channel.name}</p>
             </div>
           </div>
@@ -92,7 +94,7 @@ export function ReportBrokenStreamDialog() {
             size="icon"
             onClick={closeReportDialog}
             className="h-8 w-8 -mr-2"
-            aria-label="Close"
+            aria-label={t("report.close")}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -101,7 +103,7 @@ export function ReportBrokenStreamDialog() {
         <div className="mt-4 space-y-3">
           <div>
             <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
-              What's wrong?
+              {t("report.what")}
             </label>
             <div className="space-y-1">
               {REASONS.map((r) => (
@@ -121,7 +123,7 @@ export function ReportBrokenStreamDialog() {
                     onChange={() => setReason(r.id)}
                     className="accent-neon"
                   />
-                  {r.label}
+                  {t(r.label)}
                 </label>
               ))}
             </div>
@@ -132,14 +134,14 @@ export function ReportBrokenStreamDialog() {
               htmlFor="report-note"
               className="text-xs font-semibold text-muted-foreground mb-1.5 block"
             >
-              Anything else? (optional)
+              {t("report.more")}
             </label>
             <textarea
               id="report-note"
               value={note}
               maxLength={MAX_NOTE_LEN}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Add details — quality issues, region, timing, etc."
+              placeholder={t("report.notePh")}
               rows={3}
               className="w-full rounded-lg bg-background border border-border/60 focus:outline-none focus:border-neon px-3 py-2 text-sm resize-none"
             />
@@ -149,8 +151,7 @@ export function ReportBrokenStreamDialog() {
           </div>
 
           <p className="text-[11px] text-muted-foreground">
-            Your IP is stored with the report so we can track duplicate flags. Nothing
-            else about you is collected.
+            {t("report.privacy")}
           </p>
 
           <div className="flex flex-wrap gap-2 pt-1 justify-end">
@@ -160,7 +161,7 @@ export function ReportBrokenStreamDialog() {
               onClick={closeReportDialog}
               disabled={submitting}
             >
-              Cancel
+              {t("report.cancel")}
             </Button>
             <Button
               variant="neon"
@@ -174,7 +175,7 @@ export function ReportBrokenStreamDialog() {
               ) : (
                 <Send className="h-3.5 w-3.5" />
               )}
-              Send report
+              {t("report.send")}
             </Button>
           </div>
         </div>

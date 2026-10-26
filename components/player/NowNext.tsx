@@ -5,7 +5,7 @@ import useSWR from "swr";
 import { ReminderBell } from "@/components/ReminderBell";
 import { CalendarClock, ChevronDown } from "lucide-react";
 import type { ChannelWithMeta } from "@/lib/types";
-import { useT } from "@/lib/i18n";
+import { useT, useLang, localeFor } from "@/lib/i18n";
 
 interface Programme {
   title: string;
@@ -20,11 +20,12 @@ const SUPPORTED = new Set([
   "JP", "MY", "NZ", "PH", "RU", "SG", "TW", "US", "VN", "ZA",
 ]);
 
-const fmt = (t: number) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 /** Now / next programme from free guide data; renders nothing when missing. */
 export function NowNext({ channel }: { channel: ChannelWithMeta }) {
   const t = useT();
+  const locale = localeFor(useLang());
+  const fmt = (ms: number) => new Date(ms).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
   const [open, setOpen] = useState(false);
   // iptv-org uses "UK" where XMLTV/ISO uses "GB".
   const raw = (channel.country || "").toUpperCase();

@@ -1,5 +1,6 @@
 "use client";
 
+import { useT, useFormatNumber } from "@/lib/i18n";
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { ChannelCard } from "./ChannelCard";
 import { ChannelCardSkeleton } from "./ChannelCardSkeleton";
@@ -92,6 +93,8 @@ export function ChannelGrid({
   showLoadMore = true,
   showViewToggle = false,
 }: ChannelGridProps) {
+  const t = useT();
+  const fmtN = useFormatNumber();
   const [visibleCount, setVisibleCount] = useState(pageSize);
   const viewMode = useAppStore((s) => s.settings.viewMode);
   const updateSettings = useAppStore((s) => s.updateSettings);
@@ -164,7 +167,7 @@ export function ChannelGrid({
           {title && <h2 className="text-xl font-bold">{title}</h2>}
           <div className="flex items-center gap-2 ml-auto">
             <span className="text-sm text-muted-foreground hidden sm:inline">
-              {channels.length.toLocaleString()} channels
+              {t("count.channels", { n: fmtN(channels.length) })}
             </span>
             {showViewToggle && (
               <div className="flex items-center gap-0.5 border border-border/50 rounded-lg p-0.5">
