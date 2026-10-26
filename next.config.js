@@ -36,6 +36,10 @@ function csp() {
 }
 
 const nextConfig = {
+  env: {
+    // Versions the service worker cache per deploy.
+    NEXT_PUBLIC_BUILD_ID: (process.env.VERCEL_GIT_COMMIT_SHA || String(Date.now())).slice(0, 12),
+  },
   images: {
     // All logos are third-party URLs rendered with `unoptimized`; turning the
     // optimizer off removes the /_next/image proxy for arbitrary hosts.
