@@ -23,44 +23,48 @@ export async function checkRateLimit(
 
   const now = Date.now();
   const col = db.collection<RateLimitDoc>(RATE_LIMIT_COLLECTION);
-  const doc = await col.findOne({ _id: key });
+  // One atomic update: start a new window or add 1, so parallel requests
+  // can never all read the same old count and slip past the limit.
+  const doc = await col.findOneAndUpdate({ _id: key }, rateLimitPipeline(now, windowMs), {
+    upsert: true,
+    returnDocument: "after",
+  });
+  return decideRateLimit(doc, limit, now, windowMs);
+}
 
-  if (!doc || doc.windowStart + windowMs < now) {
-    await col.updateOne(
-      { _id: key },
-      {
-        $set: {
-          count: 1,
-          windowStart: now,
-          expiresAt: now + windowMs,
-        },
+/** Aggregation-pipeline update used by checkRateLimit (exported for tests). */
+export function rateLimitPipeline(now: number, windowMs: number) {
+  const reset = { $or: [{ $not: ["$windowStart"] }, { $lt: ["$windowStart", now - windowMs] }] };
+  return [
+    {
+      $set: {
+        count: { $cond: [reset, 1, { $add: ["$count", 1] }] },
+        expiresAt: { $cond: [reset, now + windowMs, "$expiresAt"] },
+        windowStart: { $cond: [reset, now, "$windowStart"] },
       },
-      { upsert: true }
-    );
-    return { allowed: true, remaining: limit - 1, retryAfter: 0 };
-  }
+    },
+  ];
+}
 
-  if (doc.count >= limit) {
-    return {
-      allowed: false,
-      remaining: 0,
-      retryAfter: Math.max(0, doc.windowStart + windowMs - now),
-    };
+export function decideRateLimit(
+  doc: Pick<RateLimitDoc, "count" | "windowStart"> | null,
+  limit: number,
+  now: number,
+  windowMs: number
+): RateLimitResult {
+  const count = doc?.count ?? 1;
+  const windowStart = doc?.windowStart ?? now;
+  if (count > limit) {
+    return { allowed: false, remaining: 0, retryAfter: Math.max(0, windowStart + windowMs - now) };
   }
-
-  await col.updateOne({ _id: key }, { $inc: { count: 1 } });
-  return {
-    allowed: true,
-    remaining: limit - doc.count - 1,
-    retryAfter: 0,
-  };
+  return { allowed: true, remaining: limit - count, retryAfter: 0 };
 }
 
 // Fallback when MongoDB is not configured or unreachable: a per-instance
 // in-memory window, so limits never silently switch off.
 const memory = new Map<string, { count: number; windowStart: number }>();
 
-function memoryRateLimit(key: string, limit: number, windowMs: number): RateLimitResult {
+export function memoryRateLimit(key: string, limit: number, windowMs: number): RateLimitResult {
   const now = Date.now();
   if (memory.size > 10_000) {
     for (const [k, v] of memory) if (v.windowStart + windowMs < now) memory.delete(k);
