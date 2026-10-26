@@ -10,6 +10,7 @@ import {
   type ProbeOutcome,
 } from "@/lib/server/streamProbe";
 import { recordSeenChannels } from "@/lib/server/insights";
+import { cronAuth, FALLBACK_GAP_MS } from "@/lib/server/cronAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,12 +29,28 @@ const BUDGET_MS = 50_000;
  * and one good check brings it back.
  */
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
+  const auth = cronAuth(req.headers, process.env.CRON_SECRET);
+  if (auth === "denied") {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
   const db = await getDb();
   if (!db) return NextResponse.json({ ok: false, error: "no_db" }, { status: 503 });
+  if (auth === "fallback") {
+    // No CRON_SECRET: claim today's single run atomically, or refuse.
+    const t = Date.now();
+    try {
+      const claimed = await db
+        .collection<{ _id: string; at?: number }>(CRON_STATE_COLLECTION)
+        .findOneAndUpdate(
+          { _id: "stream-check-claim", $or: [{ at: { $exists: false } }, { at: { $lt: t - FALLBACK_GAP_MS } }] },
+          { $set: { at: t } },
+          { upsert: true, returnDocument: "after" }
+        );
+      if (!claimed) throw new Error("not claimed");
+    } catch {
+      return NextResponse.json({ ok: false, error: "already_ran" }, { status: 429 });
+    }
+  }
 
   const started = Date.now();
   const catalog = await getSlimCatalog();

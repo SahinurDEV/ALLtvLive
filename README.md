@@ -141,6 +141,12 @@ See `.env.example`.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/SahinurDEV/ALLtvLive)
 
+### Domains, environment fallbacks and cron
+
+- **Canonical domain.** Without `NEXT_PUBLIC_SITE_URL`, canonical links, the sitemap, robots.txt and share cards use `https://livetv.sahinur.dev`, so both domains point search engines at the same URLs.
+- **Redirecting alltvlive.vercel.app.** Not done in code on purpose: a redirect would push apps already installed (PWA) from `alltvlive.vercel.app` out of app mode. To turn it on, use Vercel → Project → Settings → Domains → `alltvlive.vercel.app` → *Redirect to* `livetv.sahinur.dev` (308).
+- **Cron without `CRON_SECRET`.** `/api/cron/stream-check` then accepts Vercel Cron's own user agent, but runs at most once every 20 hours. Setting `CRON_SECRET` is still recommended; then only `Authorization: Bearer <secret>` works.
+
 ## 📡 Data Source
 
 ALLtvLive uses the public APIs provided by [iptv-org](https://github.com/iptv-org/iptv):
