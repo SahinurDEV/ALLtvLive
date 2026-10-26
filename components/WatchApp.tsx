@@ -1,5 +1,6 @@
 "use client";
 
+import { useT, useFormatNumber } from "@/lib/i18n";
 import { useMemo, useEffect, useRef } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { Navbar } from "@/components/Navbar";
@@ -37,6 +38,8 @@ interface WatchAppProps {
 const DEFAULT_TITLE = "ALLtvLive - Watch Live TV";
 
 export function WatchApp({ initialChannelId }: WatchAppProps) {
+  const t = useT();
+  const fmtN = useFormatNumber();
   const {
     channels,
     allChannels,
@@ -394,8 +397,7 @@ export function WatchApp({ initialChannelId }: WatchAppProps) {
                   <>
                     {filters.search && (
                       <p className="text-sm text-muted-foreground -mb-2">
-                        {channels.length.toLocaleString()} result
-                        {channels.length === 1 ? "" : "s"} for
+                        {t("count.resultsFor", { n: fmtN(channels.length) })}
                         <span className="text-foreground font-medium ml-1">
                           &ldquo;{filters.search}&rdquo;
                         </span>

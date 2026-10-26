@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Radio, Globe2, Tv2, Users, Sparkles, Clock } from "lucide-react";
 import type { ChannelWithMeta } from "@/lib/types";
+import { useT, useLang, localeFor, type MessageKey } from "@/lib/i18n";
 
 interface Props {
   totalChannels: number;
@@ -15,21 +16,14 @@ interface Props {
   featuredCount: number;
 }
 
-const TICKER_MESSAGES = [
-  "Live global TV — no signups, no subscriptions.",
-  "Press ? in the player to see keyboard shortcuts.",
-  "Tap the Sparkles icon to enter theater mode.",
-  "Try the Sleep timer inside the player · goodnight.",
-  "Screenshots save the current frame as a PNG.",
-  "Ctrl+K works too — search across every stream.",
-];
+const TICKER_MESSAGES: MessageKey[] = ["hero.t1", "hero.t2", "hero.t3", "hero.t4", "hero.t5", "hero.t6"];
 
-function greeting(hour: number): string {
-  if (hour < 5) return "Late-night viewing";
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  if (hour < 21) return "Good evening";
-  return "Late-night viewing";
+function greeting(hour: number): MessageKey {
+  if (hour < 5) return "hero.late";
+  if (hour < 12) return "hero.morning";
+  if (hour < 17) return "hero.afternoon";
+  if (hour < 21) return "hero.evening";
+  return "hero.late";
 }
 
 export function WatchHeroBar({
@@ -41,6 +35,9 @@ export function WatchHeroBar({
   primaryChannel,
   featuredCount,
 }: Props) {
+  const t = useT();
+  const lang = useLang();
+  const locale = localeFor(lang);
   const [now, setNow] = useState<Date | null>(null);
   const [tickerIdx, setTickerIdx] = useState(0);
 
@@ -61,23 +58,23 @@ export function WatchHeroBar({
   const hour = now?.getHours() ?? 12;
   const timeLabel = useMemo(() => {
     if (!now) return "--:--";
-    return now.toLocaleTimeString([], {
+    return now.toLocaleTimeString(locale, {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
     });
-  }, [now]);
+  }, [now, locale]);
   const dateLabel = useMemo(() => {
     if (!now) return "";
-    return now.toLocaleDateString([], {
+    return now.toLocaleDateString(locale, {
       weekday: "short",
       day: "numeric",
       month: "short",
     });
-  }, [now]);
+  }, [now, locale]);
 
   const primaryLabel = primaryChannel
-    ? `24/7 Live pick: ${primaryChannel.name}`
+    ? t("hero.pick", { name: primaryChannel.name })
     : featuredCount > 0
       ? `${featuredCount} curated 24/7 Live channel${featuredCount === 1 ? "" : "s"}`
       : null;
@@ -106,21 +103,21 @@ export function WatchHeroBar({
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
               </span>
               <span className="text-[10px] uppercase tracking-widest font-bold text-red-400">
-                Live now
+                {t("hero.liveNow")}
               </span>
               <span className="text-[10px] text-muted-foreground hidden sm:inline">
                 · {dateLabel}
               </span>
             </div>
             <p className="text-sm sm:text-base font-semibold truncate">
-              {greeting(hour)}
+              {t(greeting(hour))}
               {userCountryFlag ? ` ${userCountryFlag}` : ""}
-              {userCountryName ? ` — streaming from ${userCountryName}` : ""}
+              {userCountryName ? t("hero.from", { name: userCountryName }) : ""}
             </p>
             <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">
               {currentChannel
-                ? `Now playing · ${currentChannel.name}`
-                : "Choose a channel below to start watching."}
+                ? t("hero.nowPlaying", { name: currentChannel.name })
+                : t("hero.choose")}
             </p>
           </div>
         </div>
@@ -129,18 +126,18 @@ export function WatchHeroBar({
         <div className="flex flex-wrap items-center gap-2 flex-1 sm:justify-center">
           <StatPill
             icon={<Tv2 className="h-3 w-3 text-neon" />}
-            value={totalChannels.toLocaleString()}
-            label="channels"
+            value={totalChannels.toLocaleString(locale)}
+            label={t("hero.channels")}
           />
           <StatPill
             icon={<Globe2 className="h-3 w-3 text-neon" />}
-            value={totalCountries.toLocaleString()}
-            label="countries"
+            value={totalCountries.toLocaleString(locale)}
+            label={t("hero.countries")}
           />
           <StatPill
             icon={<Users className="h-3 w-3 text-neon" />}
-            value="24/7"
-            label="live feeds"
+            value={lang === "bn" ? "২৪/৭" : "24/7"}
+            label={t("hero.feeds")}
           />
           {primaryLabel && (
             <StatPill
@@ -165,7 +162,7 @@ export function WatchHeroBar({
                 transition={{ duration: 0.4 }}
                 className="absolute inset-0 text-[10px] text-muted-foreground truncate leading-4"
               >
-                {TICKER_MESSAGES[tickerIdx]}
+                {t(TICKER_MESSAGES[tickerIdx])}
               </motion.span>
             </AnimatePresence>
           </div>

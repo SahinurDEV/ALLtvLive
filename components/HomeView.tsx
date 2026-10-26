@@ -1,6 +1,7 @@
 "use client";
 
 import { HeroBanner } from "./HeroBanner";
+import { useT } from "@/lib/i18n";
 import { ChannelGrid } from "./ChannelGrid";
 import type { ChannelWithMeta } from "@/lib/types";
 
@@ -17,6 +18,7 @@ export function HomeView({
   trendingChannels,
   isLoading,
 }: HomeViewProps) {
+  const t = useT();
   return (
     <div className="space-y-8">
       {/* Hero Banner */}
@@ -29,7 +31,7 @@ export function HomeView({
         <ChannelGrid
           channels={trendingChannels}
           isLoading={isLoading}
-          title="Trending Now"
+          title={t("home.trending")}
           pageSize={12}
           showLoadMore={false}
         />
@@ -40,7 +42,7 @@ export function HomeView({
         <ChannelGrid
           channels={channels}
           isLoading={isLoading}
-          title="Live TV"
+          title={t("home.liveTv")}
           pageSize={20}
           showLoadMore={true}
         />

@@ -9,7 +9,7 @@ import { Search, X, Radio, CornerDownLeft, Clock, Flame } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAppStore } from "@/lib/store";
 import type { ChannelWithMeta } from "@/lib/types";
-import { useT } from "@/lib/i18n";
+import { useT, useFormatNumber } from "@/lib/i18n";
 
 const MAX_RESULTS = 8;
 const MAX_SUGGESTIONS = 6;
@@ -31,6 +31,7 @@ interface Section {
 export function SearchBar() {
   const setSearch = useAppStore((s) => s.setSearch);
   const t = useT();
+  const fmtN = useFormatNumber();
   const searchValue = useAppStore((s) => s.filters.search);
   const allChannels = useAppStore((s) => s.allChannels);
   const historyIds = useAppStore((s) => s.historyIds);
@@ -235,11 +236,7 @@ export function SearchBar() {
           ) : !searching && suggestions.length === 0 ? (
             <div className="p-4 text-center">
               <p className="text-sm text-muted-foreground">
-                Start typing to search{" "}
-                <span className="text-foreground font-medium">
-                  {allChannels.length.toLocaleString()}
-                </span>{" "}
-                channels
+                {t("search.startTyping", { n: fmtN(allChannels.length) })}
               </p>
               <p className="text-[11px] text-muted-foreground mt-1">
                 Search by name, country, or category.

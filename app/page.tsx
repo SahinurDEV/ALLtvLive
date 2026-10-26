@@ -1,5 +1,6 @@
 "use client";
 
+import { useT, type MessageKey } from "@/lib/i18n";
 import Link from "next/link";
 import {
   motion,
@@ -37,56 +38,56 @@ import { useEffect, useRef, useState } from "react";
 const FEATURES = [
   {
     icon: Globe2,
-    title: "10,000+ Channels",
-    body: "Every country, every language — the entire iptv-org catalog at your fingertips.",
+    title: "lp.f1t",
+    body: "lp.f1b",
     color: "from-emerald-400 to-teal-400",
   },
   {
     icon: Zap,
-    title: "Instant Playback",
-    body: "Zero signup, zero delay. Click and watch — HLS streams delivered direct from broadcasters.",
+    title: "lp.f2t",
+    body: "lp.f2b",
     color: "from-yellow-400 to-orange-400",
   },
   {
     icon: Sparkles,
-    title: "Curated Picks",
-    body: "A hand-selected featured lineup so the best live TV auto-plays the moment you arrive.",
+    title: "lp.f3t",
+    body: "lp.f3b",
     color: "from-fuchsia-400 to-pink-400",
   },
   {
     icon: Heart,
-    title: "Save Favorites",
-    body: "Bookmark channels and add your own custom IPTV streams. It all stays in your browser.",
+    title: "lp.f4t",
+    body: "lp.f4b",
     color: "from-rose-400 to-red-400",
   },
   {
     icon: Radio,
-    title: "Multi-Source",
-    body: "Every channel checks multiple mirrors — if one drops, we hop to the next automatically.",
+    title: "lp.f5t",
+    body: "lp.f5b",
     color: "from-sky-400 to-blue-500",
   },
   {
     icon: Shield,
-    title: "Private & Free",
-    body: "No account, no tracking beyond anonymous analytics. Open-source under MIT.",
+    title: "lp.f6t",
+    body: "lp.f6b",
     color: "from-violet-400 to-purple-500",
   },
 ] as const;
 
-const STATS = [
-  { value: 10000, suffix: "+", label: "Live Channels" },
-  { value: 220, suffix: "+", label: "Countries" },
-  { value: 60, suffix: "+", label: "Languages" },
-  { value: 100, suffix: "%", label: "Free Forever" },
+const STATS: { value: number; suffix: string; label: MessageKey }[] = [
+  { value: 10000, suffix: "+", label: "lp.st.channels" },
+  { value: 220, suffix: "+", label: "lp.st.countries" },
+  { value: 60, suffix: "+", label: "lp.st.languages" },
+  { value: 100, suffix: "%", label: "lp.st.free" },
 ] as const;
 
-const CATEGORIES = [
-  { icon: Newspaper, label: "News", href: "/watch" },
-  { icon: Trophy, label: "Sports", href: "/watch" },
-  { icon: Film, label: "Movies", href: "/watch" },
-  { icon: Music, label: "Music", href: "/watch" },
-  { icon: Baby, label: "Kids", href: "/watch" },
-  { icon: Landmark, label: "Culture", href: "/watch" },
+const CATEGORIES: { icon: typeof Newspaper; label: MessageKey; href: string }[] = [
+  { icon: Newspaper, label: "lp.cat.news", href: "/watch" },
+  { icon: Trophy, label: "lp.cat.sports", href: "/watch" },
+  { icon: Film, label: "lp.cat.movies", href: "/watch" },
+  { icon: Music, label: "lp.cat.music", href: "/watch" },
+  { icon: Baby, label: "lp.cat.kids", href: "/watch" },
+  { icon: Landmark, label: "lp.cat.culture", href: "/watch" },
 ] as const;
 
 const FLAGS = [
@@ -360,6 +361,7 @@ function AnimatedChannelDots() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
+  const t = useT();
   const reduce = useReducedMotion();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -447,7 +449,7 @@ export default function LandingPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon opacity-75 motion-reduce:animate-none" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-neon" />
               </span>
-              Streaming worldwide · right now
+              {t("lp.badge")}
             </motion.div>
 
             <motion.h1
@@ -456,13 +458,13 @@ export default function LandingPage() {
               transition={{ duration: 0.7, delay: 0.05 }}
               className="text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight leading-[1.02]"
             >
-              The world&apos;s
+              {t("lp.h1a")}
               <br />
-              TV, live.
+              {t("lp.h1b")}
               <br />
               <span className="relative inline-block">
                 <span className="bg-gradient-to-r from-neon via-emerald-300 to-cyan-300 bg-clip-text text-transparent">
-                  One click.
+                  {t("lp.h1c")}
                 </span>
                 {mounted && !reduce && (
                   <motion.span
@@ -481,9 +483,8 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.15 }}
               className="mt-6 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed"
             >
-              Watch <span className="text-foreground font-semibold">10,000+ live channels</span>{" "}
-              from over 220 countries — news, sports, movies, music. No signup, no
-              subscription, no catch.
+              {t("lp.subA")} <span className="text-foreground font-semibold">{t("lp.subB")}</span>{" "}
+              {t("lp.subC")}
             </motion.p>
 
             {/* CTAs */}
@@ -509,7 +510,7 @@ export default function LandingPage() {
                     <span className="w-10 h-10 rounded-full bg-black/20 flex items-center justify-center">
                       <Play className="h-5 w-5 fill-black ml-0.5" strokeWidth={0} />
                     </span>
-                    Start Watching Free
+                    {t("lp.cta")}
                   </motion.span>
                 </div>
               </Link>
@@ -518,7 +519,7 @@ export default function LandingPage() {
                 href="/about"
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
               >
-                How it works →
+                {t("lp.how")}
               </Link>
             </motion.div>
 
@@ -531,15 +532,15 @@ export default function LandingPage() {
             >
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card border border-border/60">
                 <Shield className="h-3 w-3 text-neon" />
-                No signup
+                {t("lp.noSignup")}
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card border border-border/60">
                 <TrendingUp className="h-3 w-3 text-neon" />
-                MIT open source
+                {t("lp.mit")}
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card border border-border/60">
                 <Radio className="h-3 w-3 text-neon" />
-                Powered by iptv-org
+                {t("lp.powered")}
               </span>
             </motion.div>
           </div>
@@ -562,7 +563,7 @@ export default function LandingPage() {
           transition={{ delay: 1.2 }}
           className="mt-16 flex flex-col items-center gap-2 text-muted-foreground"
         >
-          <span className="text-xs uppercase tracking-widest">Explore</span>
+          <span className="text-xs uppercase tracking-widest">{t("lp.explore")}</span>
           {mounted && !reduce ? (
             <div className="atl-bob">
               <ChevronDown className="h-5 w-5" />
@@ -581,7 +582,7 @@ export default function LandingPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
           {STATS.map((s, i) => (
             <motion.div
-              key={s.label}
+              key={t(s.label)}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
@@ -608,7 +609,7 @@ export default function LandingPage() {
             viewport={{ once: true, amount: 0.3 }}
             className="text-2xl sm:text-3xl font-bold mb-6"
           >
-            What do you want to watch?
+            {t("lp.whatWatch")}
           </motion.h2>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {CATEGORIES.map((c, i) => (
@@ -626,7 +627,7 @@ export default function LandingPage() {
                   <div className="w-12 h-12 rounded-xl bg-neon/10 border border-neon/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-neon/15 transition-all">
                     <c.icon className="h-5 w-5 text-neon" />
                   </div>
-                  <span className="text-xs sm:text-sm font-medium">{c.label}</span>
+                  <span className="text-xs sm:text-sm font-medium">{t(c.label)}</span>
                 </Link>
               </motion.div>
             ))}
@@ -644,10 +645,10 @@ export default function LandingPage() {
           className="text-center mb-12 sm:mb-16"
         >
           <h2 className="text-3xl sm:text-5xl font-black tracking-tight">
-            Built for <span className="text-neon">real</span> viewers.
+            {t("lp.builtA")} <span className="text-neon">{t("lp.builtB")}</span> {t("lp.builtC")}
           </h2>
           <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-            Everything you need to enjoy live TV, nothing you don&apos;t.
+            {t("lp.builtSub")}
           </p>
         </motion.div>
 
@@ -673,9 +674,9 @@ export default function LandingPage() {
                   <f.icon className="h-5 w-5 text-neon" />
                 </div>
               </div>
-              <h3 className="relative font-bold text-lg mb-2">{f.title}</h3>
+              <h3 className="relative font-bold text-lg mb-2">{t(f.title)}</h3>
               <p className="relative text-sm text-muted-foreground leading-relaxed">
-                {f.body}
+                {t(f.body)}
               </p>
             </motion.div>
           ))}
@@ -696,15 +697,14 @@ export default function LandingPage() {
           </div>
 
           <h2 className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.05]">
-            Turn on the world.
+            {t("lp.endA")}
             <br />
             <span className="bg-gradient-to-r from-neon via-emerald-300 to-cyan-300 bg-clip-text text-transparent">
-              Right now.
+              {t("lp.endB")}
             </span>
           </h2>
           <p className="mt-6 text-muted-foreground max-w-xl mx-auto">
-            Thousands of live streams are one click away. We&apos;ll even pick a
-            good one to start.
+            {t("lp.endSub")}
           </p>
           <Link
             href="/watch"
@@ -714,7 +714,7 @@ export default function LandingPage() {
               className="h-5 w-5 fill-black group-hover:translate-x-0.5 transition-transform"
               strokeWidth={0}
             />
-            Start Watching Free
+            {t("lp.cta")}
           </Link>
         </motion.div>
       </section>
@@ -726,11 +726,11 @@ export default function LandingPage() {
             <Radio className="h-4 w-4 text-neon" />
             <span className="font-semibold text-foreground">ALLtvLive</span>
             <span className="mx-1">·</span>
-            <span>MIT licensed · powered by iptv-org</span>
+            <span>{t("lp.footer")}</span>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <Link href="/watch" className="hover:text-foreground transition-colors">
-              Watch
+              {t("lp.watch")}
             </Link>
             <Link href="/about" className="hover:text-foreground transition-colors">
               About
