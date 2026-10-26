@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -159,21 +160,21 @@ export function Sidebar({ countries, categories, languages }: SidebarProps) {
                 </button>
               ))}
 
-              <a
+              <Link
                 href="/sports"
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
               >
                 <Trophy className="h-4 w-4 shrink-0" />
                 {t("nav.sports")}
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href="/multiview"
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
               >
                 <LayoutGrid className="h-4 w-4 shrink-0" />
                 {t("nav.multiview")}
-              </a>
+              </Link>
 
               {/* My Channels — opens unified centered modal */}
               <button
