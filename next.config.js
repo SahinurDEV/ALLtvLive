@@ -9,10 +9,31 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+    value: "camera=(), microphone=(self), geolocation=(), interest-cohort=()",
   },
   { key: "X-DNS-Prefetch-Control", value: "on" },
+  // Report-only for now: streams and logos come from thousands of hosts, so
+  // the policy is watched before it is enforced.
+  { key: "Content-Security-Policy-Report-Only", value: csp() },
 ];
+
+function csp() {
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.google.com https://www.youtube.com",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https: http:",
+    "font-src 'self' data:",
+    "media-src 'self' blob: https: http:",
+    "connect-src 'self' https: http:",
+    "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://*.googlesyndication.com https://*.doubleclick.net",
+    "worker-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+  ].join("; ");
+}
 
 const nextConfig = {
   images: {
