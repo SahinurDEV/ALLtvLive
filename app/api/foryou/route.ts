@@ -1,3 +1,4 @@
+import { publicRateLimit } from "@/lib/server/publicRateLimit";
 import { NextResponse } from "next/server";
 import { getDb, HISTORY_COLLECTION } from "@/lib/db/mongo";
 import { extractIp } from "@/lib/admin/ipUtils";
@@ -8,6 +9,8 @@ export const dynamic = "force-dynamic";
 const LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
 
 export async function GET(req: Request) {
+  const limited = publicRateLimit(req, "foryou");
+  if (limited) return limited;
   const ip = extractIp(req);
   if (ip === "unknown") {
     return NextResponse.json({ channelIds: [], source: "no_ip" });

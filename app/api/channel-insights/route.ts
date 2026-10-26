@@ -1,3 +1,4 @@
+import { publicRateLimit } from "@/lib/server/publicRateLimit";
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db/mongo";
 import { getInsights, type ChannelInsights } from "@/lib/server/insights";
@@ -6,7 +7,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /** Reliability badges, ratings and newly added channels for the whole catalog. */
-export async function GET() {
+export async function GET(req: Request) {
+  const limited = publicRateLimit(req, "insights");
+  if (limited) return limited;
   let body: ChannelInsights = { reliability: {}, rating: {}, newIds: [] };
   try {
     const db = await getDb();
