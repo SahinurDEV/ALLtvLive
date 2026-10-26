@@ -39,6 +39,10 @@ export function SearchBar() {
   const [localValue, setLocalValue] = useState(searchValue);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(0);
+  // Follow searches set from outside the box (e.g. /watch?q=, voice search).
+  useEffect(() => {
+    setLocalValue((v) => (v.trim() === searchValue.trim() ? v : searchValue));
+  }, [searchValue]);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);

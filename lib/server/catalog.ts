@@ -100,4 +100,4 @@ export async function getCatalog(): Promise<Map<string, CatalogChannel>> {
   return (await getSlimCatalog()).byId;
 }
 
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://alltvlive.vercel.app").replace(/\/$/, "");
+export { SITE_URL } from "@/lib/site";
