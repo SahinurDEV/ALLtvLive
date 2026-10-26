@@ -210,6 +210,9 @@ const en = {
   "pin.cooldown": "Too many wrong tries. Wait {s} seconds.",
   "profiles.pinNeeded": "Enter the PIN to leave this Kids profile or change profiles.",
   "profiles.unlock": "Unlock",
+  "landing.countryTitle": "Live TV channels from {name}",
+  "landing.categoryTitle": "{name} live TV channels",
+  "landing.intro": "{count} free {name} channels. Tap one to watch live, no signup needed.",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -414,6 +417,9 @@ const bn: Record<MessageKey, string> = {
   "pin.cooldown": "অনেকবার ভুল হয়েছে। {s} সেকেন্ড অপেক্ষা করুন।",
   "profiles.pinNeeded": "এই Kids প্রোফাইল থেকে বের হতে বা প্রোফাইল বদলাতে PIN দিন।",
   "profiles.unlock": "আনলক",
+  "landing.countryTitle": "{name}-এর লাইভ টিভি চ্যানেল",
+  "landing.categoryTitle": "{name} লাইভ টিভি চ্যানেল",
+  "landing.intro": "{name}-এর {count}টি ফ্রি চ্যানেল। লাইভ দেখতে যেকোনোটিতে চাপ দিন, সাইন আপ লাগবে না।",
 };
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, bn };

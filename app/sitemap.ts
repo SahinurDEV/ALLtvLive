@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { getCatalog, SITE_URL } from "@/lib/server/catalog";
 import { getHiddenSet } from "@/lib/server/hiddenChannels";
 import { SITEMAP_FILES, sitemapSlice } from "@/lib/server/sitemapChunks";
+import { topKeys } from "@/lib/server/landing";
 
 // Built once and regenerated daily (ISR), instead of on every request.
 export const revalidate = 86400;
@@ -28,6 +29,11 @@ export default async function sitemap({ id }: { id: number | string }): Promise<
     const [catalog, hidden] = await Promise.all([getCatalog(), getHiddenSet()]);
     // Channels the health check found dead are left out (their pages are noindex).
     const ids = [...catalog.keys()].filter((cid) => !hidden.has(cid)).sort();
+    if (file === 0) {
+      const live = [...catalog.values()].filter((c) => !hidden.has(c.id));
+      for (const k of topKeys(live, "country")) pages.push({ url: `${SITE_URL}/country/${k}`, lastModified: now, changeFrequency: "daily", priority: 0.7 });
+      for (const k of topKeys(live, "category")) pages.push({ url: `${SITE_URL}/category/${k}`, lastModified: now, changeFrequency: "daily", priority: 0.7 });
+    }
     for (const cid of sitemapSlice(ids, file)) {
       pages.push({ url: `${SITE_URL}/${encodeURIComponent(cid)}`, lastModified: now, changeFrequency: "daily", priority: 0.6 });
     }
